@@ -1,0 +1,749 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Smart Village Data Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a 3D village with its 9 service areas on one stage, an area picker, a step rail, the caption, then what AI does in each area. */
+:root{
+  --bg:#f5f4ee; --surface:#ffffff; --ink:#1d2219; --muted:#5f6656; --line:#e0ddd0;
+  --accent:#c2571a; --accent-ink:#ffffff;
+  --read:#0f9bd7; --cmd:#1fae55; --msg:#d83a83; --ai:#6a55e6; --warn:#d9861a; --ok:#1d8a4b;
+  --sky:#e6ece4; --ground:#7d9561;
+  --font-display:"Baloo 2", "Segoe UI", system-ui, sans-serif;
+  --font-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12140f; --surface:#1b1e17; --ink:#ecefe4; --muted:#a0a793; --line:#2e3327;
+  --accent:#f08a4b; --accent-ink:#1a0c03;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --sky:#0d120e; --ground:#222b1c; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#12140f; --surface:#1b1e17; --ink:#ecefe4; --muted:#a0a793; --line:#2e3327;
+  --accent:#f08a4b; --accent-ink:#1a0c03;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --sky:#0d120e; --ground:#222b1c; color-scheme:dark }
+
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:18px}
+header{display:grid;gap:6px;max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(30px,4.6vw,46px);line-height:1.02;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:0;font-size:17px}
+
+.stage{position:relative;height:clamp(480px,68vh,720px);border-radius:18px;overflow:hidden;background:var(--sky);border:1px solid var(--line);touch-action:none}
+.stage canvas{display:block;width:100%;height:100%;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;white-space:nowrap;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:5px 9px 5px 8px;font-size:12.5px;line-height:1.25;box-shadow:0 4px 14px rgba(0,0,0,.12);opacity:0;transition:opacity .45s;display:flex;gap:7px;align-items:center}
+.lbl.on{opacity:1}
+.lbl.dim{opacity:.55}
+.lbl i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c,var(--read))}
+.lbl b{font-weight:700}
+.lbl span{color:var(--muted)}
+.lbl em{font-style:normal;font-weight:700;color:var(--c,var(--read));font-variant-numeric:tabular-nums}
+.lbl.area{border-color:var(--c)}
+.lbl.area.cur{box-shadow:0 0 0 2px var(--c),0 4px 14px rgba(0,0,0,.14)}
+.lbl::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+.lbl.area::after{border-color:var(--c)}
+
+.hud{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:grid;gap:2px;min-width:200px;max-width:min(260px,calc(100% - 24px));box-shadow:0 6px 18px rgba(0,0,0,.1)}
+.hud .sc{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.hud .sc i{width:9px;height:9px;border-radius:50%;background:var(--ac)}
+.hud .mv{font-family:var(--font-display);font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05}
+.hud .ml{font-size:12px;color:var(--muted)}
+.chip{justify-self:start;margin-top:4px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--sev) 16%,transparent);color:var(--sev)}
+.think{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:12px;width:min(330px,calc(100% - 24px));background:var(--surface);border:1px solid var(--ai);border-radius:14px;padding:12px 14px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.12);opacity:0;transform:translateY(-6px);transition:opacity .4s,transform .4s;pointer-events:none}
+.think.on{opacity:1;transform:none}
+.think .h{font-weight:700;color:var(--ai);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.think ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.think li{display:grid;grid-template-columns:18px 1fr auto;gap:6px;align-items:start;font-size:13px}
+.think li .m{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px}
+.think li.y .m{background:var(--ok)} .think li.n .m{background:var(--muted)} .think li.n{color:var(--muted)}
+.think li .s{font-weight:700;color:var(--ok);text-align:right}
+.think li.n .s{color:var(--muted);font-weight:400}
+.legend{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;display:flex;gap:6px 12px;flex-wrap:wrap;max-width:calc(100% - 190px);background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:12px}
+.legend span{display:flex;gap:6px;align-items:center}
+.legend i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.tog{all:unset;cursor:pointer;position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700}
+.tog[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.tog:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.rail{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
+.step{all:unset;cursor:pointer;position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.step:focus-visible,.ctl:focus-visible,.areas button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.step .n{font-size:12px;color:var(--muted)}
+.step .t{font-family:var(--font-display);font-weight:800;font-size:17px;line-height:1.2}
+.step .bar{position:absolute;left:0;bottom:0;height:3px;width:calc(var(--p,0)*100%);background:var(--accent)}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ctrls{display:flex;gap:8px}
+.ctl{all:unset;cursor:pointer;display:grid;place-items:center;width:52px;min-height:52px;border-radius:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-sizing:border-box}
+.ctl:hover{border-color:var(--accent)}
+.ctl svg{width:20px;height:20px}
+.ctl.next{width:auto;padding:0 16px;grid-auto-flow:column;gap:6px;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0}
+
+.pick h3,.sec h2{margin:0}
+.pick{display:grid;gap:10px}
+.pick h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.areas{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:8px}
+.areas button{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px;min-width:0}
+.areas button .d{grid-row:span 2;width:12px;height:12px;border-radius:50%;background:var(--ac)}
+.areas button b{font-weight:700;font-size:14.5px;line-height:1.25}
+.areas button small{color:var(--muted);font-size:12.5px}
+.areas button small em{font-style:normal;font-weight:700;color:var(--accent)}
+.areas button[aria-pressed="true"]{border-color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
+
+.caption{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:grid;gap:8px}
+.caption h2{font-family:var(--font-display);font-size:26px;line-height:1.1;margin:0;text-wrap:balance}
+.caption p{margin:0;max-width:70ch}
+.caption .ex{border-top:1px dashed var(--line);padding-top:10px}
+.caption .ex b{color:var(--accent)}
+
+.sec{display:grid;gap:12px;margin-top:10px}
+.sec h2{font-family:var(--font-display);font-size:26px}
+.sec .sub{margin:0;color:var(--muted);max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.card{border-top:4px solid var(--ac);background:var(--surface);border-radius:4px 4px 14px 14px;padding:14px 16px;display:grid;gap:6px;align-content:start}
+.card b{font-family:var(--font-display);font-size:19px;line-height:1.15}
+.card .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.card p{margin:0;font-size:14.5px}
+.card p.k{color:var(--muted)}
+.card p.ai::before{content:"AI: ";font-weight:700;color:var(--ai)}
+.note{font-size:13px;color:var(--muted);margin:0}
+.fallback{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+@media (max-width:760px){
+  .rail{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .ctrls{grid-column:1/-1}
+  .ctrls>button{flex:1;min-height:44px}
+  .step{padding:8px 6px;text-align:center}
+  .step .t{font-size:13.5px}
+  .stage{height:540px}
+  .hud{min-width:0;padding:8px 11px}
+  .hud .mv{font-size:23px}
+  .legend{font-size:11px;gap:4px 8px;bottom:52px;max-width:calc(100% - 24px)}
+  .lbl{font-size:11px;padding:4px 7px}
+  .lbl span{display:none}
+  .think{top:auto;bottom:52px}
+  .areas{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .areas button small{display:none}
+}
+@media (prefers-reduced-motion: reduce){.lbl,.think{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Smart Village Command Centre</div>
+    <h1>One village, nine services, one AI watching out for everyone</h1>
+    <p class="lede">Sensors in fields, ponds, clinics, schools and water tanks feed one command centre. Pick an area to see how a problem is spotted, decided on, fixed and reported. Drag to turn the 3D view.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of a village with a command centre, fields, a clinic, a school, a water tank, a fish pond, a cattle shed, solar panels and a wind turbine, a market and a land office, with animated data moving to a cloud AI"></canvas>
+    <div class="overlay" id="overlay"></div>
+    <div class="hud" aria-live="polite">
+      <div class="sc" id="hudScen"><i></i><span></span></div>
+      <div class="mv" id="hudVal"></div>
+      <div class="ml" id="hudLbl"></div>
+      <div class="chip" id="hudChip"></div>
+    </div>
+    <div class="think" id="think"></div>
+    <div class="legend" aria-label="Dot colours">
+      <span style="--c:var(--read)"><i></i>Readings</span>
+      <span style="--c:var(--cmd)"><i></i>Instructions</span>
+      <span style="--c:var(--msg)"><i></i>Messages to people</span>
+    </div>
+    <button class="tog" id="areasBtn" aria-pressed="true">Area names</button>
+  </div>
+
+  <section class="pick">
+    <h3>Pick an area</h3>
+    <div class="areas" id="areas"></div>
+  </section>
+
+  <nav class="rail" aria-label="Steps">
+    <button class="step" data-i="0"><span class="n">Step 1</span><span class="t">Sense</span><span class="bar"></span></button>
+    <button class="step" data-i="1"><span class="n">Step 2</span><span class="t">Send</span><span class="bar"></span></button>
+    <button class="step" data-i="2"><span class="n">Step 3</span><span class="t">Think</span><span class="bar"></span></button>
+    <button class="step" data-i="3"><span class="n">Step 4</span><span class="t">Act</span><span class="bar"></span></button>
+    <button class="step" data-i="4"><span class="n">Step 5</span><span class="t">Tell people</span><span class="bar"></span></button>
+    <div class="ctrls">
+      <button class="ctl" id="repeat" aria-label="Repeat this step" title="Repeat this step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+      <button class="ctl" id="play" aria-label="Pause" title="Play / pause"></button>
+      <button class="ctl next" id="next" aria-label="Next step">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </nav>
+
+  <article class="caption" aria-live="polite">
+    <h2 id="capT"></h2>
+    <p id="capD"></p>
+    <p class="ex" id="capX"></p>
+  </article>
+
+  <section class="sec">
+    <h2>What AI does in each of the 9 areas</h2>
+    <p class="sub">Every area shares the same gateway, cloud AI and command centre. What changes is what is measured and what the AI can do about it.</p>
+    <div class="grid" id="cards"></div>
+    <p class="note">Village names, times and numbers in this demo are examples.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $ = (s) => document.querySelector(s);
+const stage = $('#stage'), overlay = $('#overlay'), canvas = $('#c');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- story ---------- */
+const STEPS = [
+  { t:'Sensors and cameras watch the village around the clock', d:'Each area has its own sensors: soil stations in the fields, a probe in the fish pond, a thermometer in the vaccine fridge, meters on the water tank and the solar plant, cameras at the market.' },
+  { t:'The village gateway sends everything to the cloud', d:'A tower in the village collects the readings from every area and sends them over the mobile network. If the network drops, readings are stored and sent later.' },
+  { t:'The AI spots the problem and weighs the options', d:'It compares readings with what is normal, connects clues across areas, and picks the action that helps the most people with the least cost or risk.' },
+  { t:'Things are fixed, by machines or by the right person', d:'Some fixes are automatic, like closing a valve or starting an aerator. Others go straight to the right person: the nurse, the repair crew, the Talathi or the fire team.' },
+  { t:'Officials and villagers are told in plain words', d:'The command centre screen and the Sarpanch’s phone show what happened and what was done. Villagers get SMS or voice messages in Marathi when it affects them.' },
+];
+const AREAS = [
+  { id:'citizen', name:'Citizen Services', color:'#2563EB', time:'4:12 PM', blurb:'Smoke on market CCTV', sensor:'cctv',
+    metric:{ label:'Time to raise the alarm', from:20, to:1, unit:' min' },
+    sense:'AI-CCTV camera 112 at Nandgaon market spots <b>smoke</b> with 94 % confidence.',
+    think:'Smoke near shops at peak hour is high risk. The AI finds the nearest help and who must know.',
+    options:[['Alert the fire tender, 9 km away','now',1],['Notify police and the Gram Panchayat','now',1],['Wait for someone to phone it in','~20 min',0]],
+    actLbl:'Siren on · fire team alerted',
+    actX:'The market siren sounds, the fire tender and police get the exact location, and the command centre shows the live camera. The alarm goes out in <b>1 minute</b> instead of about 20.',
+    phone:{ title:'Fire team on the way', body:'Smoke at Nandgaon market at 4:12 PM. Fire tender, police and Sarpanch alerted.' }, status:['Smoke seen','Alerting…','Help on the way'],
+    card:{ k:'AI-CCTV, command centre, citizen app, complaint line', ai:'Spots smoke, crowds and accidents on camera, routes complaints to the right department and chases overdue ones.' } },
+  { id:'agri', name:'Smart Agriculture', color:'#16A34A', time:'6:00 AM', blurb:'Pest risk rising in maize', sensor:'farm',
+    metric:{ label:'Fall armyworm risk (maize)', from:72, to:18, unit:' %' },
+    sense:'Field stations record <b>warm, humid nights</b>, and pest traps catch <b>3× more moths</b> than last week.',
+    think:'Weather and trap counts match the pattern seen before a fall armyworm outbreak in maize.',
+    options:[['Drone-spray only the affected plots','−70 % pesticide',1],['Send advice to 1,240 maize farmers','today',1],['Spray every field','costly, harms soil',0]],
+    actLbl:'Drone spraying plot 4',
+    actX:'A drone sprays only the affected plots, and 1,240 maize farmers get a voice message in Marathi telling them what to do. Risk falls to <b>18 %</b>.',
+    phone:{ title:'Pest alert handled', body:'Armyworm risk was 72 %. Drone sprayed plot 4. Advice sent to 1,240 farmers.' }, status:['High risk','Treating…','Under control'],
+    card:{ k:'Soil and weather stations, pest traps, drones, common facility centre', ai:'Advises when to sow, water, fertilise and spray, predicts pest attacks, and books drones and machines.' } },
+  { id:'health', name:'Healthcare', color:'#DC2626', time:'2:40 AM', blurb:'Vaccine fridge warming up', sensor:'fridge',
+    metric:{ label:'Vaccine fridge temperature', from:11, to:5, unit:' °C', dec:1 },
+    sense:'The vaccine fridge at PHC Sangvi has climbed to <b>11 °C</b>. The safe range is 2–8 °C.',
+    think:'Power at the PHC dropped at 2:10 AM. Vaccines worth ₹4 lakh will spoil in about 2 hours.',
+    options:[['Switch the fridge to the solar battery','now',1],['Wake the on-call nurse','now',1],['Wait for the morning staff','vaccines spoil',0]],
+    actLbl:'Fridge on battery · nurse alerted',
+    actX:'The fridge switches to the solar battery and the on-call nurse is called. The temperature comes back to <b>5 °C</b> before any vaccine is lost.',
+    phone:{ title:'Vaccines safe', body:'PHC Sangvi fridge reached 11 °C at 2:40 AM. Moved to battery power. Now 5 °C.' }, status:['Too warm','Cooling…','Safe'],
+    card:{ k:'Vaccine fridges, telemedicine kiosk, health records (HMIS)', ai:'Guards the cold chain, flags fever clusters early, and lines up telemedicine slots with specialists.' } },
+  { id:'edu', name:'Education', color:'#7C3AED', time:'11:00 AM', blurb:'Students falling behind in maths', sensor:'school',
+    metric:{ label:'Class 7 maths score', from:52, to:68, unit:' %' },
+    sense:'Weekly quizzes at the AI Centre show <b>Class 7 maths at 52 %</b>, with fractions the weakest topic.',
+    think:'18 students struggle with the same topic. Short daily practice at each child’s level works better than repeating the chapter.',
+    options:[['Personal practice on the lab tablets','20 min a day',1],['Tell the teacher who needs help','today',1],['Repeat the whole chapter for all','2 weeks',0]],
+    actLbl:'Practice sets sent to the lab',
+    actX:'Each student gets practice at their own level in the Skill Lab, and the teacher gets a list of who needs help. After 4 weeks the class average rises to <b>68 %</b>.',
+    phone:{ title:'Maths plan started', body:'Class 7 at 52 % in fractions. Personal practice started for 18 students. Teacher informed.' }, status:['Falling behind','Practising…','Improving'],
+    card:{ k:'AI Centre, Skill Lab tablets, attendance', ai:'Finds learning gaps from quizzes, gives each child practice at their level, and flags students at risk of dropping out.' } },
+  { id:'water', name:'Water + Waste', color:'#0284C7', time:'5:15 AM', blurb:'Burst on the main pipeline', sensor:'tank',
+    metric:{ label:'Water lost per hour', from:18000, to:0, unit:' litres' },
+    sense:'SCADA sees the Wadgaon tank falling fast while the pump runs. Flow on the main line is <b>3× normal</b>.',
+    think:'This flow pattern matches a burst on the main line between the tank and Ward 2.',
+    options:[['Close valve V-3 and stop the pump','saves 18,000 L/hr',1],['Send the crew to the exact spot','now',1],['Keep supplying, fix later','tank empty by 7 AM',0]],
+    actLbl:'Valve V-3 closed · crew sent',
+    actX:'Valve V-3 closes, the pump stops and the crew gets the exact location. Water loss drops to <b>zero</b> and the other wards keep their supply.',
+    phone:{ title:'Burst isolated', body:'Main line burst near Ward 2 at 5:15 AM. Valve closed, crew on site. Other wards unaffected.' }, status:['Leaking','Isolating…','Fixed'],
+    card:{ k:'Tank and flow meters (SCADA), RO water ATM, biogas plant, waste sorting shed', ai:'Detects leaks and theft, schedules pumping, plans garbage pick-up routes and tracks biogas output.' } },
+  { id:'livestock', name:'Livestock & Fisheries', color:'#B45309', time:'4:30 AM', blurb:'Fish pond short of oxygen', sensor:'pond',
+    metric:{ label:'Pond oxygen (DO)', from:3.0, to:6.2, unit:' mg/L', dec:1 },
+    sense:'The probe in Khedgaon pond reads dissolved oxygen at <b>3.0 mg/L</b>. Fish need more than 5.',
+    think:'Oxygen falls before dawn on warm, cloudy nights. At this rate fish start dying in about an hour.',
+    options:[['Start the aerators now','now',1],['Alert the fish farmers’ group','now',1],['Wait for sunrise','fish loss likely',0]],
+    actLbl:'Aerators on',
+    actX:'The aerators start by themselves and the farmers’ group gets a message. Oxygen climbs back to <b>6.2 mg/L</b>.',
+    phone:{ title:'Pond oxygen restored', body:'Khedgaon pond oxygen fell to 3.0 mg/L at 4:30 AM. Aerators on. Now 6.2 mg/L.' }, status:['Danger','Aerating…','Safe'],
+    card:{ k:'Cattle collars, community pond probes, aerators', ai:'Spots sick animals from collar temperature and movement, plans vaccination, and keeps ponds safe for fish.' } },
+  { id:'energy', name:'Renewable Energy', color:'#CA8A04', time:'7:45 PM', blurb:'Grid power cut', sensor:'battery',
+    metric:{ label:'Backup time left', from:3.5, to:9, unit:' hours', dec:1 },
+    sense:'Grid supply is lost. The village microgrid switches to battery at <b>62 %</b>.',
+    think:'At the current load the battery lasts 3.5 hours. Some loads matter much more than others.',
+    options:[['Keep the PHC, water pumps and streetlights on','essential',1],['Pause non-essential loads','+5.5 hours',1],['Run everything as usual','dark by 11 PM',0]],
+    actLbl:'Essential loads only',
+    actX:'The AI keeps the PHC, water pumps and streetlights powered and pauses the rest. Backup now lasts <b>9 hours</b>, until the grid returns.',
+    phone:{ title:'Running on battery', body:'Grid cut at 7:45 PM. PHC, pumps and streetlights kept on. Backup lasts 9 hours.' }, status:['Grid down','Balancing…','Essentials safe'],
+    card:{ k:'Solar panels, wind turbine, small hydro, battery, meters', ai:'Forecasts solar and wind, decides when to charge or use the battery, and protects essential loads in a power cut.' } },
+  { id:'jobs', name:'Jobs, Money & Markets', color:'#0F766E', time:'10:20 AM', blurb:'Duplicate pension claims', sensor:'kiosk',
+    metric:{ label:'Pension money at risk', from:180000, to:0, unit:'', prefix:'₹' },
+    sense:'Scheme records show <b>one bank account</b> linked to <b>6 pension beneficiaries</b> in 3 villages.',
+    think:'Six people sharing one account is a common fraud pattern. Genuine pensioners must still be paid.',
+    options:[['Hold only the 6 suspicious payments','₹1.8 lakh',1],['Ask the Talathi to verify in person','this week',1],['Stop all pension payments','hurts real people',0]],
+    actLbl:'6 payments on hold',
+    actX:'Only the 6 suspicious payments are held and the Talathi gets a list to verify. <b>₹1.8 lakh</b> is protected and everyone else is paid on time.',
+    phone:{ title:'Fraud stopped', body:'6 pension claims shared one bank account. Payments held for checking. ₹1.8 lakh protected.' }, status:['Suspicious','Checking…','Protected'],
+    card:{ k:'Scheme records, UPI payments, e-market kiosk, Scheme Helper', ai:'Tells families which schemes they qualify for, catches fraud, and finds the best market price for their produce.' } },
+  { id:'land', name:'Land, Property & Revenue', color:'#A16207', planned:true, time:'12:00 PM', blurb:'Missing houses in the tax list', sensor:'records',
+    metric:{ label:'Property tax collected', from:61, to:84, unit:' %' },
+    sense:'Land records and the property tax register are compared. <b>312 houses</b> are missing from the tax list.',
+    think:'Matching maps with records finds unassessed houses and owners who forgot to pay.',
+    options:[['Add the 312 houses to the register','fair for all',1],['Send UPI payment reminders','one tap',1],['Survey every house door to door','3 months',0]],
+    actLbl:'Register updated · reminders sent',
+    actX:'The register is updated and owners get a UPI link to pay. Collection rises from 61 % to <b>84 %</b> over the season.',
+    phone:{ title:'Tax register updated', body:'312 houses added to the register. Payment reminders sent with a UPI link.' }, status:['Gaps found','Updating…','Improving'],
+    card:{ k:'Property tax, licences, 7/12 land records, registers', ai:'Matches records to find missing entries, sends reminders, and answers villagers’ questions about their land papers.' } },
+];
+const AR = Object.fromEntries(AREAS.map(a => [a.id, a]));
+const DUR = 7;
+const fmt = (m, v) => (m.prefix || '') + (m.dec ? v.toFixed(m.dec) : Math.round(v).toLocaleString('en-IN')) + m.unit;
+
+/* ---------- WebGL ---------- */
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias:true }); }
+catch(e){ stage.insertAdjacentHTML('beforeend','<div class="fallback">This browser could not start the 3D view. The steps below still explain each stage.</div>'); }
+if (!renderer) return;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
+const flows = [], labels = [];
+const V = (x,y,z) => new THREE.Vector3(x,y,z);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.enablePan = false;
+controls.minDistance = 20; controls.maxDistance = 140; controls.maxPolarAngle = 1.45;
+controls.target.set(0, 4, -1);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a9a7a, 0.75); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 0.95);
+sun.position.set(25, 40, 18); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-40, right:40, top:40, bottom:-40, near:1, far:130 });
+scene.add(sun);
+
+const std = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness:0.8, metalness:0.05 }, o));
+const mesh = (geo, mat, x=0, y=0, z=0, parent=scene) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+const sphere = new THREE.SphereGeometry(1, 14, 10);
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.35,'rgba(255,255,255,.8)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+const flat = (w, d, color, x, z, y = 0.02) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), std(color, { roughness:1 })); m.rotation.x = -Math.PI/2; m.position.set(x, y, z); m.receiveShadow = true; scene.add(m); return m; };
+
+/* ground + roads */
+const groundMat = std(0x9fb27f, { roughness:1 });
+const ground = new THREE.Mesh(new THREE.CircleGeometry(140, 48), groundMat);
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+flat(64, 2.4, 0xb8a98c, 0, 2.6, 0.03);
+flat(2.4, 40, 0xb8a98c, 2.2, -2, 0.03);
+
+/* helpers */
+const roofMat = [std(0xb5523b), std(0x8f6a4a), std(0x5f7d8c), std(0xa3563f)];
+const wallMat = [std(0xf1e6d2), std(0xe8d8bd), std(0xf5efe3), std(0xdcc9a7)];
+function house(x, z, r = 0, s = 1) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = r; g.scale.setScalar(s); scene.add(g);
+  const k = Math.abs(Math.round(x * 7 + z * 3)) % 4;
+  mesh(new THREE.BoxGeometry(2.2, 1.6, 2), wallMat[k], 0, 0.8, 0, g);
+  const roof = mesh(new THREE.ConeGeometry(1.85, 1.1, 4), roofMat[k], 0, 2.15, 0, g); roof.rotation.y = Math.PI/4; roof.scale.z = 0.95;
+  mesh(new THREE.BoxGeometry(0.5, 0.9, 0.05), std(0x6b4a33), 0, 0.45, 1.01, g);
+  return g;
+}
+function tree(x, z, s = 1) {
+  mesh(new THREE.CylinderGeometry(0.12 * s, 0.16 * s, 1.2 * s, 6), std(0x6b4f35), x, 0.6 * s, z);
+  const c = mesh(sphere, std(Math.random() > 0.5 ? 0x4e8b3a : 0x3f7a35), x, 1.7 * s, z); c.scale.set(0.95 * s, 0.85 * s, 0.95 * s);
+}
+function building(x, z, w, h, d, wall, roof) {
+  mesh(new THREE.BoxGeometry(w, h, d), std(wall), x, h/2, z);
+  mesh(new THREE.BoxGeometry(w + 0.3, 0.25, d + 0.3), std(roof), x, h + 0.12, z);
+}
+
+/* houses + trees */
+[[-9,8],[-6,10.5],[-3,8.5],[-10.5,12],[-1,12],[5,11],[2,14],[-7,14.5],[-12,-1],[-10,-3.5],[-13,2],[8,-9.5],[11,-10],[-4,-6],[-1,-7.5]].forEach(([x,z], i) => house(x, z, (i % 3) * 0.4, 0.9 + (i % 2) * 0.15));
+[[-16,-4],[-18,12],[12,15],[19,2],[-6,18],[0,18],[8,16],[30,10],[-32,14],[-12,-20],[14,-21],[27,-20],[-20,-16],[5,-18]].forEach(([x,z], i) => tree(x, z, 1 + (i % 3) * 0.25));
+
+/* 1. Citizen services: command centre + CCTV + streetlights */
+building(0, -3, 7, 3.6, 4.2, 0xdfe7f3, 0x2b4c7e);
+const screenMat = new THREE.MeshBasicMaterial({ color:0x1b3a66 });
+const dash = mesh(new THREE.PlaneGeometry(4, 1.6), screenMat, 0, 2, -0.88); dash.castShadow = false;
+mesh(new THREE.CylinderGeometry(0.03, 0.03, 2, 6), std(0x777777), -2.8, 4.7, -3); // flag
+mesh(new THREE.BoxGeometry(0.9, 0.5, 0.02), std(0xe8822a), -2.35, 5.4, -3);
+mesh(new THREE.CylinderGeometry(0.06, 0.08, 4.2, 8), std(0x6b7378, { metalness:0.5 }), 6.2, 2.1, 5.3);
+mesh(new THREE.BoxGeometry(0.5, 0.3, 0.3), std(0xf2f4f5), 6.2, 4.3, 5.3);
+const siren = mesh(new THREE.SphereGeometry(0.18, 10, 8), new THREE.MeshBasicMaterial({ color:0x552222 }), 6.2, 4.65, 5.3);
+const LAMPS = [];
+for (let x = -24; x <= 24; x += 8) { mesh(new THREE.CylinderGeometry(0.05, 0.06, 3.2, 6), std(0x6b7378), x, 1.6, 4.1);
+  LAMPS.push(mesh(new THREE.SphereGeometry(0.2, 8, 6), new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xffe8a8, emissiveIntensity:0.8 }), x, 3.25, 4.1)); }
+
+/* 8. Jobs, money & markets: market stalls + UPI kiosk */
+const canopy = [0xe35d3a, 0x2e8b57, 0xf2b134];
+for (let i = 0; i < 3; i++) { const x = 8.5 + i * 2.4;
+  mesh(new THREE.BoxGeometry(2, 0.9, 1.3), std(0x9b7653), x, 0.45, 7.2);
+  const c = mesh(new THREE.BoxGeometry(2.2, 0.08, 1.6), std(canopy[i]), x, 2.1, 7.2); c.rotation.x = 0.15;
+  for (const dx of [-0.95, 0.95]) mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.1, 5), std(0x6b4f35), x + dx, 1.05, 7.9);
+  for (let k = 0; k < 4; k++) mesh(sphere, std([0xe2412e, 0xf2c230, 0x5aa843, 0xe07b2a][k]), x - 0.6 + k * 0.4, 1.0, 7.2).scale.setScalar(0.17);
+}
+mesh(new THREE.BoxGeometry(0.9, 1.8, 0.7), std(0x0f766e), 15.6, 0.9, 7.2);
+const kioskScr = mesh(new THREE.PlaneGeometry(0.6, 0.5), new THREE.MeshBasicMaterial({ color:0x6fe0d2 }), 15.6, 1.35, 7.56); kioskScr.castShadow = false;
+const smoke = particles(70, 0x777777, 1.6, (a, i, init) => { a[i*3] = 11 + (Math.random()-0.5) * 1.5; a[i*3+1] = 2.2 + (init ? Math.random() * 5 : 0); a[i*3+2] = 7.4 + (Math.random()-0.5) * 1.2; });
+
+/* 9. Land office (planned) */
+building(-7, -10.5, 4, 2.4, 3, 0xd8d2c4, 0x8a7a5a);
+const landScr = mesh(new THREE.PlaneGeometry(1.2, 0.7), new THREE.MeshBasicMaterial({ color:0x8a7a5a }), -7, 1.5, -8.98); landScr.castShadow = false;
+
+/* 4. Education: school + flag + playground */
+building(-16, 6, 8, 2.8, 3.4, 0xf3d97a, 0x7a4fb0);
+for (let i = 0; i < 4; i++) mesh(new THREE.BoxGeometry(1, 0.8, 0.05), std(0x5f7d8c), -18.9 + i * 1.95, 1.7, 7.72);
+const schoolScr = mesh(new THREE.PlaneGeometry(1.4, 0.9), new THREE.MeshBasicMaterial({ color:0x3a2c58 }), -16, 1.6, 7.73); schoolScr.castShadow = false;
+flat(7, 4, 0xc9b48a, -16, 10.2, 0.03);
+mesh(new THREE.CylinderGeometry(0.04, 0.04, 4, 6), std(0x777777), -12.5, 2, 9);
+mesh(new THREE.BoxGeometry(1, 0.6, 0.02), std(0xe8822a), -12, 3.7, 9);
+
+/* 3. Healthcare: PHC with red cross */
+building(14, -4, 5.5, 2.8, 4, 0xf7f7f5, 0xb3b9bd);
+mesh(new THREE.BoxGeometry(1.6, 0.12, 0.45), std(0xd62f2f), 14, 3.05, -4); mesh(new THREE.BoxGeometry(0.45, 0.12, 1.6), std(0xd62f2f), 14, 3.05, -4);
+const fridgeLed = mesh(new THREE.SphereGeometry(0.12, 8, 6), new THREE.MeshBasicMaterial({ color:0x3fd17a }), 15.6, 1.9, -1.95);
+mesh(new THREE.BoxGeometry(0.8, 1.6, 0.05), std(0x9fb7c2), 15.6, 0.8, -1.98);
+
+/* 5. Water + waste: overhead tank, pipeline, valve, RO ATM, biogas */
+const OHT = V(-3, 0, -17);
+for (const [dx, dz] of [[-1.2,-1.2],[1.2,-1.2],[-1.2,1.2],[1.2,1.2]]) mesh(new THREE.CylinderGeometry(0.15, 0.18, 6.5, 8), std(0xb8b2a6), OHT.x + dx, 3.25, OHT.z + dz);
+mesh(new THREE.CylinderGeometry(2.1, 2.1, 2.6, 24), std(0xd9d4c8), OHT.x, 7.8, OHT.z);
+mesh(new THREE.ConeGeometry(2.2, 0.8, 24), std(0x6f8fa3), OHT.x, 9.5, OHT.z);
+const pipeCurve = new THREE.CatmullRomCurve3([V(-3, 0.3, -15.6), V(-3, 0.3, -11), V(-1.8, 0.3, -6.5), V(1.2, 0.3, -1), V(1.2, 0.3, 6)], false, 'centripetal');
+mesh(new THREE.TubeGeometry(pipeCurve, 60, 0.13, 8), std(0x3b6f9c, { metalness:0.3 }));
+const valve = new THREE.Group(); valve.position.set(-3, 0.75, -12.5); scene.add(valve);
+mesh(new THREE.TorusGeometry(0.32, 0.05, 6, 16), std(0xc0392b), 0, 0, 0, valve);
+mesh(new THREE.BoxGeometry(0.6, 0.05, 0.05), std(0xc0392b), 0, 0, 0, valve);
+mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6), std(0x555555), -3, 0.5, -12.5);
+const leak = particles(80, 0x5bb8f0, 0.35, (a, i, init) => { a[i*3] = -2.4 + (Math.random()-0.5) * 0.3; a[i*3+1] = 0.4 + (init ? Math.random() * 1.6 : 0); a[i*3+2] = -8.2 + (Math.random()-0.5) * 0.3; a.v = a.v || []; });
+mesh(new THREE.BoxGeometry(1, 2, 0.8), std(0x0284c7), -7, 1, -15.5);
+mesh(new THREE.SphereGeometry(1.6, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), std(0x8aa04f), -12, 0, -16);
+building(-12, -11.8, 3.2, 1.8, 2.4, 0xc8c2b4, 0x6b6f5a);
+
+/* 2. Agriculture: fields, field station, drone, CFC shed */
+const FIELDS = [[-26, -8, 0x7fb24a], [-26, 2, 0xc9b85a], [-34, -8, 0x5f9c3c], [-34, 2, 0x8fbf55], [-30, 11, 0x6aa845]];
+FIELDS.forEach(([x, z, c]) => { flat(7.4, 8.6, 0x8a6e4b, x, z, 0.03);
+  for (let r = -3; r <= 3; r += 1) { const row = mesh(new THREE.BoxGeometry(6.8, 0.35, 0.4), std(c), x, 0.2, z + r * 1.15); row.castShadow = false; } });
+mesh(new THREE.CylinderGeometry(0.06, 0.07, 2.6, 6), std(0x777777), -22, 1.3, -3);
+mesh(new THREE.BoxGeometry(0.5, 0.4, 0.3), std(0xf2f4f5), -22, 2.6, -3);
+const solarSmall = mesh(new THREE.BoxGeometry(0.8, 0.04, 0.6), std(0x1d2c4a, { metalness:0.4 }), -22, 2.95, -3); solarSmall.rotation.z = -0.4;
+building(-21, -14, 4, 2.4, 3, 0xd6cdb8, 0x4f7a3a);
+const drone = new THREE.Group(); scene.add(drone);
+mesh(new THREE.BoxGeometry(0.6, 0.18, 0.6), std(0x2b2f33), 0, 0, 0, drone);
+const props = [];
+for (const [dx, dz] of [[-0.5,-0.5],[0.5,-0.5],[-0.5,0.5],[0.5,0.5]]) { mesh(new THREE.BoxGeometry(0.5, 0.04, 0.06), std(0x2b2f33), dx * 0.5, 0, dz * 0.5, drone).rotation.y = Math.atan2(dz, dx);
+  const p = mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.02, 12), new THREE.MeshStandardMaterial({ color:0xdddddd, transparent:true, opacity:0.6 }), dx, 0.08, dz, drone); props.push(p); }
+const spray = particles(90, 0xd8f5c8, 0.4, (a, i, init) => { a[i*3] = -26; a[i*3+1] = init ? Math.random() * 4 : 4; a[i*3+2] = -8; });
+
+/* 6. Livestock & fisheries: cattle shed + cows, pond + aerator */
+const shed = V(17, 0, 12);
+for (const [dx, dz] of [[-2.5,-1.6],[2.5,-1.6],[-2.5,1.6],[2.5,1.6]]) mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.4, 6), std(0x6b4f35), shed.x + dx, 1.2, shed.z + dz);
+const shedRoof = mesh(new THREE.BoxGeometry(5.8, 0.12, 4), std(0x8f7a5a), shed.x, 2.45, shed.z); shedRoof.rotation.z = 0.1;
+for (let i = 0; i < 3; i++) { const cg = new THREE.Group(); cg.position.set(shed.x - 1.6 + i * 1.6, 0, shed.z + (i % 2 ? 0.6 : -0.4)); cg.rotation.y = 0.3 * i; scene.add(cg);
+  mesh(new THREE.BoxGeometry(1.2, 0.6, 0.55), std(i === 1 ? 0x3b3330 : 0xf2efe8), 0, 0.85, 0, cg);
+  mesh(new THREE.BoxGeometry(0.4, 0.38, 0.36), std(i === 1 ? 0x3b3330 : 0xf2efe8), 0.75, 1.05, 0, cg);
+  for (const [dx, dz] of [[-0.45,-0.2],[0.45,-0.2],[-0.45,0.2],[0.45,0.2]]) mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.55, 5), std(0x5a4a3a), dx, 0.28, dz, cg);
+  mesh(new THREE.TorusGeometry(0.2, 0.04, 5, 10), std(0x1f8fd6), 0.6, 0.9, 0, cg).rotation.y = Math.PI/2; }
+const POND = V(26, 0, 4);
+const rim = new THREE.Mesh(new THREE.CircleGeometry(4.6, 40), std(0x8a7a5a, { roughness:1 })); rim.rotation.x = -Math.PI/2; rim.position.set(POND.x, 0.025, POND.z); scene.add(rim);
+const water = new THREE.Mesh(new THREE.CircleGeometry(4, 40), std(0x3d86a8, { roughness:0.2, metalness:0.2 })); water.rotation.x = -Math.PI/2; water.position.set(POND.x, 0.05, POND.z); scene.add(water);
+const aerator = new THREE.Group(); aerator.position.set(POND.x + 0.5, 0.15, POND.z - 0.5); scene.add(aerator);
+mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.2, 12), std(0xf2b134), 0, 0, 0, aerator);
+const paddle = new THREE.Group(); paddle.position.y = 0.15; aerator.add(paddle);
+for (let k = 0; k < 4; k++) mesh(new THREE.BoxGeometry(0.9, 0.05, 0.15), std(0x2b2f33), 0, 0, 0, paddle).rotation.y = k * Math.PI / 4;
+const splash = particles(80, 0xe6f6ff, 0.5, (a, i, init) => { const ang = Math.random() * 6.28, r = Math.random() * 1.2; a[i*3] = POND.x + 0.5 + Math.cos(ang) * r; a[i*3+1] = 0.2 + (init ? Math.random() * 0.8 : 0); a[i*3+2] = POND.z - 0.5 + Math.sin(ang) * r; });
+mesh(new THREE.SphereGeometry(0.22, 10, 8), std(0xe8582f), POND.x - 2, 0.12, POND.z + 1.6);
+
+/* 7. Renewable energy: solar array, wind turbine, battery container */
+for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) {
+  const p = mesh(new THREE.BoxGeometry(2.2, 0.06, 1.3), std(0x1f3358, { metalness:0.5, roughness:0.3 }), 19 + c * 2.4, 1.05, -13 - r * 2.4); p.rotation.x = -0.45;
+  mesh(new THREE.CylinderGeometry(0.04, 0.04, 1, 5), std(0x888888), 19 + c * 2.4, 0.5, -12.6 - r * 2.4);
+}
+mesh(new THREE.CylinderGeometry(0.22, 0.4, 12, 10), std(0xeceff1), 31, 6, -8);
+const rotor = new THREE.Group(); rotor.position.set(31, 12, -7.55); scene.add(rotor);
+mesh(new THREE.BoxGeometry(0.6, 0.6, 1.2), std(0xeceff1), 31, 12, -8);
+for (let k = 0; k < 3; k++) { const b = mesh(new THREE.BoxGeometry(0.35, 5.4, 0.06), std(0xf5f7f8), 0, 2.7, 0, new THREE.Group()); const h = b.parent; h.rotation.z = k * 2.094; rotor.add(h); }
+mesh(new THREE.BoxGeometry(4, 2.2, 2), std(0xd9b44a), 18, 1.1, -19);
+const battLed = mesh(new THREE.SphereGeometry(0.12, 8, 6), new THREE.MeshBasicMaterial({ color:0x3fd17a }), 16.4, 1.9, -17.98);
+
+/* village gateway tower */
+const GW = V(7, 13.2, -10.5);
+mesh(new THREE.CylinderGeometry(0.18, 0.6, 13, 6), std(0xc8ccd0, { metalness:0.6, wireframe:false }), GW.x, 6.5, GW.z);
+for (let y = 2; y < 13; y += 2.2) mesh(new THREE.TorusGeometry(0.6 - y * 0.03, 0.03, 4, 6), std(0x9aa0a6), GW.x, y, GW.z).rotation.x = Math.PI/2;
+for (const a of [0, 2.1, 4.2]) mesh(new THREE.BoxGeometry(0.2, 0.7, 0.1), std(0xf2f4f5), GW.x + Math.cos(a) * 0.3, 12.6, GW.z + Math.sin(a) * 0.3).rotation.y = -a;
+const gwLed = mesh(new THREE.SphereGeometry(0.14, 8, 6), new THREE.MeshBasicMaterial({ color:0xff4040 }), GW.x, 13.35, GW.z);
+
+/* cloud + AI core */
+const CLOUD = V(-2, 22, -14), CROT = 0.6;
+const cloud = new THREE.Group(); cloud.position.copy(CLOUD); cloud.rotation.y = CROT; scene.add(cloud);
+const cloudMat = new THREE.MeshStandardMaterial({ color:0xffffff, roughness:1, transparent:true, opacity:0.93 });
+[[0,0,0,2.6],[-2.6,-0.5,0.3,1.9],[2.7,-0.4,-0.2,2],[-1.3,1.2,-0.5,1.8],[1.4,1.3,0.3,1.6],[4.3,-0.7,0.3,1.3],[-4.3,-0.8,0,1.3]].forEach(([x,y,z,r]) => {
+  const m = new THREE.Mesh(sphere, cloudMat); m.position.set(x,y,z+1.2); m.scale.setScalar(r); cloud.add(m); });
+const coreMat = new THREE.MeshBasicMaterial({ color:0x6a55e6 });
+const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 1), new THREE.MeshBasicMaterial({ color:0x6a55e6, wireframe:true })); core.position.set(0, 0.2, 4.2); cloud.add(core);
+const coreIn = new THREE.Mesh(new THREE.IcosahedronGeometry(0.65, 0), coreMat); coreIn.position.copy(core.position); cloud.add(coreIn);
+const rings = [0,1,2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(1.3, 0.04, 6, 48), new THREE.MeshBasicMaterial({ color:0x6a55e6, transparent:true, opacity:0 })); r.position.copy(core.position); cloud.add(r); return r; });
+const CORE = CLOUD.clone().add(V(4.2 * Math.sin(CROT), 0.2, 4.2 * Math.cos(CROT)));
+
+/* phone */
+const PHONE = V(22, 16, -12);
+const phone = new THREE.Group(); phone.position.copy(PHONE); scene.add(phone);
+mesh(new THREE.BoxGeometry(2.8, 5.4, 0.25), std(0x1b1f24, { roughness:0.3, metalness:0.3 }), 0, 0, 0, phone);
+const phoneCv = document.createElement('canvas'); phoneCv.width = 360; phoneCv.height = 720;
+const phoneTex = new THREE.CanvasTexture(phoneCv);
+const pscreen = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 5.2), new THREE.MeshBasicMaterial({ map:phoneTex })); pscreen.position.z = 0.13; phone.add(pscreen);
+
+function particles(n, color, size, spawn) {
+  const geo = new THREE.BufferGeometry(); const pos = new Float32Array(n*3);
+  for (let i = 0; i < n; i++) spawn(pos, i, true);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color, size, map:dotTex, transparent:true, opacity:0, depthWrite:false });
+  const p = new THREE.Points(geo, mat); scene.add(p); return { p, pos, n, spawn };
+}
+
+/* ---------- sensors (one per area) and act targets ---------- */
+const SENS = {
+  cctv:    { pos:V(6.2, 4.3, 5.3), name:'AI-CCTV camera', area:'citizen' },
+  farm:    { pos:V(-22, 2.6, -3), name:'Field station', area:'agri' },
+  fridge:  { pos:V(15.6, 1.9, -1.9), name:'Vaccine fridge sensor', area:'health' },
+  school:  { pos:V(-16, 1.6, 7.75), name:'AI Centre quizzes', area:'edu' },
+  tank:    { pos:V(-3, 9.9, -17), name:'Tank & flow meter', area:'water' },
+  pond:    { pos:V(POND.x - 2, 0.35, POND.z + 1.6), name:'Pond oxygen probe', area:'livestock' },
+  battery: { pos:V(16.4, 2.2, -18), name:'Battery & energy meter', area:'energy' },
+  kiosk:   { pos:V(15.6, 1.9, 7.6), name:'Scheme & UPI records', area:'jobs' },
+  records: { pos:V(-7, 1.5, -8.9), name:'Land & tax records', area:'land' },
+};
+for (const k in SENS) { const s = SENS[k];
+  s.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0x0f9bd7, transparent:true, opacity:0.85, depthWrite:false }));
+  s.glow.position.copy(s.pos).add(V(0, 0.35, 0)); s.glow.scale.setScalar(0.7); scene.add(s.glow); }
+const ACT = { citizen:V(6.2, 4.6, 5.3), agri:V(-26, 4.5, -8), health:V(15.6, 1.9, -1.9), edu:V(-16, 1.6, 7.75), water:V(-3, 0.8, -12.5),
+  livestock:V(POND.x + 0.5, 0.4, POND.z - 0.5), energy:V(16.4, 1.9, -18), jobs:V(15.6, 1.4, 7.6), land:V(-7, 1.5, -8.9) };
+const beacon = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 6, 48), new THREE.MeshBasicMaterial({ color:0x1fae55, transparent:true, opacity:0 }));
+beacon.rotation.x = Math.PI/2; scene.add(beacon);
+
+/* ---------- flows ---------- */
+class Flow {
+  constructor(pts, kind, n = 4, speed = 0.3, size = 0.25) {
+    this.curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    this.kind = kind; this.speed = speed; this.on = 0; this.target = 0; this.off = Math.random();
+    this.lineMat = new THREE.LineDashedMaterial({ color:0xffffff, dashSize:0.4, gapSize:0.3, transparent:true, opacity:0, depthWrite:false });
+    this.line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(this.curve.getPoints(100)), this.lineMat); this.line.computeLineDistances(); scene.add(this.line);
+    this.dots = [];
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 8), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0 }));
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0xffffff, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }));
+      g.scale.setScalar(size * 5); m.add(g); scene.add(m); this.dots.push({ m, g });
+    }
+    flows.push(this);
+  }
+  color(c) { this.lineMat.color.set(c); this.dots.forEach(d => { d.m.material.color.set(c); d.g.material.color.set(c); }); }
+  update(dt) {
+    this.on += (this.target - this.on) * Math.min(1, dt * 3.5);
+    if (!reduce) this.off = (this.off + dt * this.speed) % 1;
+    const vis = this.on > 0.01;
+    this.line.visible = vis; this.lineMat.opacity = this.on * 0.6;
+    this.dots.forEach((d, i) => { d.m.visible = vis; if (!vis) return;
+      const t = (this.off + i / this.dots.length) % 1; d.m.position.copy(this.curve.getPointAt(t));
+      const edge = Math.min(1, t * 8, (1 - t) * 8); d.m.material.opacity = this.on * edge; d.g.material.opacity = this.on * edge * 0.55; });
+  }
+}
+const arc = (a, b, h) => [a.clone(), V(a.x, a.y + 2, a.z), V((a.x + b.x) / 2, Math.max(a.y, b.y) + h, (a.z + b.z) / 2), b.clone()];
+const F = { sense:{}, act:{} };
+for (const k in SENS) F.sense[k] = new Flow(arc(SENS[k].pos, GW, 5), 'read', 4, 0.26, 0.2);
+F.send = new Flow([GW.clone(), V(5, 19, -11), CORE.clone().add(V(0.4, 0.4, 0))], 'read', 5, 0.3, 0.3);
+F.cmd = new Flow([CORE.clone().add(V(0.8, -0.8, 0.4)), V(8, 18, -8), GW.clone().add(V(0.3, 0.4, 0.3))], 'cmd', 5, 0.3, 0.3);
+for (const a in ACT) F.act[a] = new Flow([GW.clone(), V((GW.x + ACT[a].x) / 2, 12, (GW.z + ACT[a].z) / 2), V(ACT[a].x, ACT[a].y + 3, ACT[a].z), ACT[a].clone()], 'cmd', 4, 0.32, 0.2);
+F.tell = new Flow([CORE.clone().add(V(0.6, 0.4, 0.4)), V(12, 24, -12), PHONE.clone().add(V(-1, 1, -0.3))], 'msg', 4, 0.32, 0.3);
+F.dash = new Flow([CORE.clone().add(V(0, -1, 0.5)), V(-1, 12, -6), V(0, 2.4, -0.6)], 'msg', 4, 0.32, 0.25);
+
+/* ---------- labels ---------- */
+function addLabel(pos, html, color, cls = '') {
+  const el = document.createElement('div'); el.className = 'lbl ' + cls; el.style.setProperty('--c', color); el.innerHTML = html; overlay.appendChild(el);
+  const L = { el, pos, on:false }; labels.push(L); return L;
+}
+const AREA_POS = { citizen:V(0, 5, -3), agri:V(-30, 1.5, -3), health:V(14, 4, -4), edu:V(-16, 4.2, 6), water:V(-3, 11, -17), livestock:V(17, 3, 12), energy:V(23, 3, -15), jobs:V(11, 2.8, 7.2), land:V(-7, 3.6, -10.5) };
+AREAS.forEach(a => { a.label = addLabel(AREA_POS[a.id], `<i></i><b>${a.name}</b>${a.planned ? '<span>Planned</span>' : ''}`, a.color, 'area'); });
+for (const k in SENS) SENS[k].label = addLabel(SENS[k].pos.clone().add(V(0, 0.9, 0)), `<i></i><b>${SENS[k].name}</b>`, 'var(--read)');
+const LB = {
+  gw: addLabel(GW.clone().add(V(0, 1, 0)), '<i></i><b>Village gateway</b><span>Sends data out</span>', 'var(--read)'),
+  cloud: addLabel(CLOUD.clone().add(V(1.6, 3.2, 1.8)), '<i></i><b>Cloud AI</b><span>Spots problems, picks fixes</span>', 'var(--ai)'),
+  act: addLabel(V(0,0,0), '', 'var(--cmd)'),
+  phone: addLabel(PHONE.clone().add(V(0, 3.4, 0)), '<i></i><b>Sarpanch’s phone</b>', 'var(--msg)'),
+  dash: addLabel(V(0, 3.3, -0.8), '<i></i><b>Command centre screen</b>', 'var(--msg)'),
+};
+let showAreas = stage.clientWidth >= 600;
+$('#areasBtn').setAttribute('aria-pressed', showAreas);
+
+/* ---------- phone ---------- */
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x+r, y); g.arcTo(x+w, y, x+w, y+h, r); g.arcTo(x+w, y+h, x, y+h, r); g.arcTo(x, y+h, x, y, r); g.arcTo(x, y, x+w, y, r); g.closePath(); }
+function wrapText(g, text, x, y, maxW, lh) { let line = ''; for (const w of text.split(' ')) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { g.fillText(line, x, y); line = w; y += lh; } else line = t; } g.fillText(line, x, y); return y; }
+function drawPhone(a, done) {
+  const g = phoneCv.getContext('2d'), W = 360, m = a.metric;
+  g.fillStyle = '#f6f5ef'; g.fillRect(0, 0, W, 720);
+  g.fillStyle = '#3a2410'; g.fillRect(0, 0, W, 150);
+  g.fillStyle = '#f3c9a6'; g.font = '700 20px Atkinson Hyperlegible, sans-serif'; g.fillText(a.time, 24, 40);
+  g.fillStyle = '#ffffff'; g.font = '800 32px "Baloo 2", sans-serif'; g.fillText('Smart Village', 24, 100);
+  g.fillStyle = a.color; g.beginPath(); g.arc(30, 124, 7, 0, 7); g.fill();
+  g.fillStyle = '#f3c9a6'; g.font = '400 19px Atkinson Hyperlegible, sans-serif'; g.fillText(a.name, 44, 130);
+  rr(g, 18, 172, W - 36, 262, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; rr(g, 38, 194, done ? 150 : 130, 34, 17); g.fill();
+  g.fillStyle = '#ffffff'; g.font = '700 18px Atkinson Hyperlegible, sans-serif'; g.fillText(done ? a.status[2] : 'Watching', 54, 217);
+  g.fillStyle = '#1d2219'; g.font = '800 28px "Baloo 2", sans-serif'; wrapText(g, done ? a.phone.title : 'All areas normal', 38, 272, W - 76, 32);
+  g.fillStyle = '#5f6656'; g.font = '400 20px Atkinson Hyperlegible, sans-serif'; wrapText(g, done ? a.phone.body : 'The AI is watching all 9 areas.', 38, 314, W - 76, 27);
+  rr(g, 18, 452, W - 36, 126, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = '#5f6656'; g.font = '400 18px Atkinson Hyperlegible, sans-serif'; g.fillText(m.label, 38, 486);
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; g.font = '800 44px "Baloo 2", sans-serif'; g.fillText(fmt(m, done ? m.to : m.from), 38, 546);
+  rr(g, 18, 606, W - 36, 70, 35); g.fillStyle = '#3a2410'; g.fill();
+  g.fillStyle = '#ffffff'; g.font = '400 21px Atkinson Hyperlegible, sans-serif'; g.fillText('Ask: "What needs me today?"', 40, 649);
+  phoneTex.needsUpdate = true;
+}
+
+/* ---------- theme ---------- */
+function applyTheme() {
+  const sky = new THREE.Color(css('--sky') || '#e6ece4');
+  scene.background = sky; scene.fog = new THREE.Fog(sky, 110, 230);
+  groundMat.color.set(css('--ground') || '#9fb27f');
+  const dark = sky.getHSL({}).l < 0.3;
+  hemi.intensity = dark ? 0.55 : 0.75; sun.intensity = dark ? 0.7 : 0.95;
+  LAMPS.forEach(l => l.material.emissiveIntensity = dark ? 1.4 : 0.6);
+  const map = { read:css('--read'), cmd:css('--cmd'), msg:css('--msg') };
+  flows.forEach(f => f.color(map[f.kind]));
+  for (const k in SENS) SENS[k].glow.material.color.set(map.read);
+  beacon.material.color.set(map.cmd);
+  const ai = css('--ai'); coreMat.color.set(ai); core.material.color.set(ai); rings.forEach(r => r.material.color.set(ai));
+}
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+
+/* ---------- state ---------- */
+const thinkEl = $('#think');
+const state = { step:0, t:0, area:'citizen', playing:!reduce, a:0 };
+const clock = new THREE.Clock();
+
+function applyStep() {
+  const a = AR[state.area], i = state.step;
+  for (const k in F.sense) F.sense[k].target = i === 0 ? (SENS[k].area === a.id ? 1 : 0.45) : 0;
+  F.send.target = i === 1 ? 1 : 0; F.cmd.target = i === 3 ? 1 : 0;
+  for (const k in F.act) F.act[k].target = (i === 3 && k === a.id) ? 1 : 0;
+  F.tell.target = F.dash.target = i === 4 ? 1 : 0;
+  for (const k in SENS) SENS[k].label.on = SENS[k].area === a.id && i <= 2;
+  LB.act.pos = ACT[a.id].clone().add(V(0, a.id === 'agri' ? 1.5 : 1.2, 0)); LB.act.el.innerHTML = `<i></i><b>${a.actLbl}</b>`; LB.act.on = i === 3;
+  LB.gw.on = i === 1 || i === 3; LB.cloud.on = i === 1 || i === 2 || i === 4; LB.phone.on = LB.dash.on = i === 4;
+  updateAreaLabels();
+  drawPhone(a, i === 4);
+  screenMat.color.set(i === 4 ? a.color : '#1b3a66');
+  thinkEl.innerHTML = `<div class="h">Cloud AI is weighing options</div><div style="margin-top:4px">${a.think}</div><ul>${a.options.map(o => `<li class="${o[2] ? 'y' : 'n'}"><span class="m">${o[2] ? '✓' : '×'}</span><span>${o[0]}</span><span class="s">${o[1]}</span></li>`).join('')}</ul>`;
+  thinkEl.classList.toggle('on', i === 2);
+  $('#capT').textContent = STEPS[i].t; $('#capD').textContent = STEPS[i].d;
+  const ex = [a.sense, `The gateway sends this reading, along with readings from all 9 areas, to the cloud at <b>${a.time}</b>.`, a.think, a.actX, `On the Sarpanch’s phone and the command centre screen: <b>“${a.phone.title}.”</b> ${a.phone.body}`][i];
+  $('#capX').innerHTML = `<b>${a.name}${a.planned ? ' (planned)' : ''}:</b> ` + ex;
+  document.querySelectorAll('.step').forEach((b, k) => { b.setAttribute('aria-current', k === i ? 'step' : 'false'); if (k !== i) b.style.setProperty('--p', k < i ? 1 : 0); });
+  const hs = $('#hudScen'); hs.style.setProperty('--ac', a.color); hs.querySelector('span').textContent = `${a.name} · ${a.time}`;
+  $('#hudLbl').textContent = a.metric.label;
+}
+function updateAreaLabels() { AREAS.forEach(a => { a.label.on = showAreas || a.id === state.area; a.label.el.classList.toggle('cur', a.id === state.area); }); }
+function setStep(i) { state.step = i; state.t = 0; applyStep(); }
+function setArea(k) { state.area = k; state.a = 0; document.querySelectorAll('.areas button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k)); setStep(0); }
+function next() { if (state.step < 4) setStep(state.step + 1); else { const idx = AREAS.findIndex(x => x.id === state.area); setArea(AREAS[(idx + 1) % AREAS.length].id); } }
+
+const box = $('#areas'), cards = $('#cards');
+AREAS.forEach(a => {
+  const b = document.createElement('button'); b.dataset.k = a.id; b.style.setProperty('--ac', a.color);
+  b.innerHTML = `<span class="d"></span><b>${a.name}</b><small>${a.planned ? '<em>Planned</em> · ' : ''}${a.blurb}</small>`; b.onclick = () => setArea(a.id); box.appendChild(b);
+  const c = document.createElement('div'); c.className = 'card'; c.style.setProperty('--ac', a.color);
+  c.innerHTML = `${a.planned ? '<span class="tag">Planned</span>' : ''}<b>${a.name}</b><p class="k">${a.card.k}</p><p class="ai">${a.card.ai}</p>`; cards.appendChild(c);
+});
+document.querySelectorAll('.step').forEach(b => b.onclick = () => setStep(+b.dataset.i));
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+const playBtn = $('#play');
+const syncPlay = () => { playBtn.innerHTML = state.playing ? ICON_PAUSE : ICON_PLAY; playBtn.setAttribute('aria-label', state.playing ? 'Pause' : 'Play'); };
+playBtn.onclick = () => { state.playing = !state.playing; syncPlay(); }; syncPlay();
+$('#repeat').onclick = () => setStep(state.step);
+$('#next').onclick = next;
+const areasBtn = $('#areasBtn');
+areasBtn.onclick = () => { showAreas = !showAreas; areasBtn.setAttribute('aria-pressed', showAreas); updateAreaLabels(); };
+
+let placed = false;
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (!placed) { camera.position.copy(controls.target).add(V(26, 34, 44).setLength(w < 600 ? 100 : 70)); placed = true; }
+  camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+
+/* ---------- loop ---------- */
+const ease = (x) => x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2;
+const tmp = new THREE.Vector3();
+const stepBtns = document.querySelectorAll('.step');
+function updParticles(P, on, f) { P.p.material.opacity = on; if (on < 0.01 || reduce) return; for (let i = 0; i < P.n; i++) f(P.pos, i); P.p.geometry.attributes.position.needsUpdate = true; }
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05), T = clock.elapsedTime, a = AR[state.area];
+  state.t = Math.min(state.t + dt, DUR);
+  if (state.playing && state.t >= DUR) next();
+  const p = state.t / DUR;
+  stepBtns[state.step].style.setProperty('--p', state.playing ? p : 1);
+  const m = a.metric;
+  const v = state.step < 3 ? m.from : state.step === 3 ? m.from + (m.to - m.from) * ease(Math.min(1, p * 1.3)) : m.to;
+  $('#hudVal').textContent = fmt(m, v);
+  const si = state.step < 3 ? 0 : state.step === 3 && p < 0.75 ? 1 : 2;
+  const chip = $('#hudChip'); chip.textContent = a.status[si]; chip.style.setProperty('--sev', si === 2 ? 'var(--ok)' : 'var(--warn)');
+
+  // act progress for the current area
+  state.a += ((state.step >= 3 ? 1 : 0) - state.a) * Math.min(1, dt * 1.5);
+  const A = (id) => state.area === id ? state.a : 0;
+  // citizen: smoke + siren
+  const smokeOn = state.area === 'citizen' ? (state.step < 4 ? 0.55 : 0.2) : 0;
+  updParticles(smoke, smokeOn, (q, i) => { q[i*3+1] += dt * (0.8 + (i % 5) * 0.2); q[i*3] += dt * 0.3; if (q[i*3+1] > 9) smoke.spawn(q, i, false); });
+  siren.material.color.set(A('citizen') > 0.3 && Math.sin(T * 12) > 0 ? 0xff2a2a : 0x552222);
+  // agri: drone sweep + spray
+  const ag = A('agri');
+  const dx = ag > 0.05 ? -26 + Math.sin(T * 0.9) * 3 : -24 + Math.sin(T * 0.6) * 1.5, dz = ag > 0.05 ? -8 + Math.cos(T * 0.45) * 3 : -4;
+  drone.position.set(dx, 4.5 + Math.sin(T * 2) * 0.15, dz); props.forEach(pp => pp.rotation.y += dt * 40 * (reduce ? 0 : 1));
+  updParticles(spray, ag * 0.6, (q, i) => { q[i*3+1] -= dt * (2 + (i % 4) * 0.4); if (q[i*3+1] < 0.3) { q[i*3] = dx + (Math.random()-0.5) * 1.4; q[i*3+1] = 4.3; q[i*3+2] = dz + (Math.random()-0.5) * 1.4; } });
+  // health fridge LED
+  fridgeLed.material.color.set(state.area === 'health' ? (A('health') > 0.6 ? 0x3fd17a : (Math.sin(T * 8) > 0 ? 0xff3b3b : 0x661414)) : 0x3fd17a);
+  // education screen
+  schoolScr.material.color.set(A('edu') > 0.4 ? 0xb69cff : 0x3a2c58);
+  // water: leak until valve closes
+  const leakOn = state.area === 'water' ? (1 - A('water')) * 0.85 : 0;
+  updParticles(leak, leakOn, (q, i) => { q[i*3+1] += dt * (2.2 - (q[i*3+1] - 0.4) * 1.4); q[i*3] += dt * ((i % 3) - 1) * 0.6; if (q[i*3+1] > 2.2 || q[i*3+1] < 0.35) leak.spawn(q, i, false); });
+  valve.rotation.z = A('water') * Math.PI * 2;
+  // livestock: aerator
+  const ae = A('livestock');
+  paddle.rotation.y += dt * 12 * ae * (reduce ? 0 : 1);
+  updParticles(splash, ae * 0.7, (q, i) => { q[i*3+1] += dt * (1.5 - (q[i*3+1] - 0.2) * 2.5); if (q[i*3+1] > 0.9 || q[i*3+1] < 0.15) splash.spawn(q, i, false); });
+  // energy: battery LED, lamps on battery
+  battLed.material.color.set(state.area === 'energy' && state.step < 3 ? (Math.sin(T * 6) > 0 ? 0xf0a43a : 0x5a3a10) : 0x3fd17a);
+  kioskScr.material.color.set(A('jobs') > 0.4 ? 0xf0a43a : 0x6fe0d2);
+  landScr.material.color.set(A('land') > 0.4 ? 0xe0c27a : 0x8a7a5a);
+  if (!reduce) rotor.rotation.z += dt * 1.6;
+  // beacon ring at the act target
+  const bt = ACT[a.id]; const ph = (T * 0.8) % 1;
+  beacon.position.set(bt.x, a.id === 'agri' ? 0.4 : Math.max(0.15, bt.y - 1.2), bt.z); beacon.scale.setScalar(0.6 + ph * 3);
+  beacon.material.opacity = state.step === 3 ? (1 - ph) * 0.8 : 0;
+  // sensors + gateway
+  for (const k in SENS) { const s = SENS[k], cur = s.area === a.id;
+    s.glow.scale.setScalar(cur && state.step <= 1 ? 1 + 0.3 * Math.sin(T * 5) : state.step === 0 ? 0.6 + 0.2 * Math.sin(T * 6 + s.pos.x) : 0.45); }
+  gwLed.material.color.set((state.step === 1 || state.step === 3) && Math.sin(T * 14) > 0 ? 0xff4040 : 0x551515);
+  // AI core
+  const thinking = state.step === 2, spin = reduce ? 0 : 1;
+  core.rotation.y += dt * (thinking ? 2.2 : 0.4) * spin; core.rotation.x += dt * (thinking ? 1.1 : 0.2) * spin;
+  coreIn.scale.setScalar(1 + (thinking ? 0.18 * Math.sin(T * 8) : 0));
+  rings.forEach((r, k) => { const q = (T * 0.7 + k / 3) % 1; r.scale.setScalar(1 + q * 2.2); r.material.opacity = thinking ? (1 - q) * 0.8 : 0; r.lookAt(camera.position); });
+  phone.position.y = PHONE.y + (reduce ? 0 : Math.sin(T * 1.4) * 0.2);
+  phone.lookAt(tmp.copy(camera.position).setY(phone.position.y + 1));
+  phone.scale.setScalar(state.step === 4 ? 1.08 : 1);
+
+  flows.forEach(f => f.update(dt));
+  controls.update();
+  renderer.render(scene, camera);
+
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const L of labels) {
+    tmp.copy(L.pos).project(camera);
+    const vis = L.on && tmp.z < 1 && Math.abs(tmp.x) < 1.1 && Math.abs(tmp.y) < 1.1;
+    L.el.classList.toggle('on', vis);
+    if (!vis) continue;
+    const hw = L.el.offsetWidth / 2 + 6, px = Math.max(hw, Math.min(w - hw, (tmp.x + 1) / 2 * w));
+    L.el.style.transform = `translate(${px.toFixed(1)}px, ${((1 - tmp.y) / 2 * h).toFixed(1)}px) translate(-50%, calc(-100% - 8px))`;
+  }
+  requestAnimationFrame(frame);
+}
+setArea('citizen');
+frame();
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Software Development: Before & After AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Root ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* shared */
+  --ink: #E8EDF4;
+  --ink-dim: #7C8CA3;
+  --ink-faint: #3D4F63;
+  --line: #1E2C3F;
+
+  /* LEFT – traditional */
+  --l-bg:    #0B0E15;
+  --l-bg2:   #0F1320;
+  --l-panel: #131927;
+  --l-blue:  #4A9EFF;
+  --l-amber: #F59E0B;
+  --l-red:   #F87171;
+  --l-green: #6EE7B7;
+  --l-muted: #4B5563;
+
+  /* RIGHT – AI */
+  --r-bg:     #070B12;
+  --r-bg2:    #0A0F1A;
+  --r-panel:  #0E1525;
+  --r-violet: #A78BFA;
+  --r-teal:   #2DD4BF;
+  --r-green:  #4ADE80;
+  --r-cyan:   #38BDF8;
+  --r-magenta:#E879F9;
+
+  --radius: 12px;
+  --shadow: 0 16px 48px -20px rgba(0,0,0,.9);
+}
+
+html { font-size: 15px; }
+body {
+  font-family: "Sora", sans-serif;
+  background: #050810;
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── HERO HEADER ── */
+.hero {
+  text-align: center;
+  padding: 40px 24px 28px;
+  background: linear-gradient(180deg, #08101E 0%, #050810 100%);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(600px 300px at 20% 50%, rgba(74,158,255,.07), transparent 60%),
+    radial-gradient(600px 300px at 80% 50%, rgba(167,139,250,.07), transparent 60%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .92rem; letter-spacing: .28em; text-transform: uppercase;
+  color: #ffffff; margin-bottom: 14px;
+}
+.hero h1 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.7rem, 3.5vw, 2.8rem);
+  font-weight: 800; letter-spacing: -.025em; line-height: 1.1;
+  margin-bottom: 12px;
+}
+.hero h1 .old { color: var(--l-blue); }
+.hero h1 .vs  { color: var(--ink-dim); font-weight: 400; font-size: .7em; margin: 0 .3em; }
+.hero h1 .new { color: var(--r-violet); }
+.hero-sub {
+  font-size: .9rem; color: var(--ink-dim); max-width: 680px; margin: 0 auto 20px;
+  line-height: 1.6;
+}
+.hero-tabs {
+  display: inline-flex; gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+}
+.htab {
+  font-family: "IBM Plex Mono", monospace; font-size: .78rem; letter-spacing: .08em;
+  padding: 9px 22px; cursor: pointer; transition: all .2s;
+  border: none; color: var(--ink-dim); background: transparent;
+}
+.htab.active-l { background: rgba(74,158,255,.15); color: var(--l-blue); }
+.htab.active-r { background: rgba(167,139,250,.15); color: var(--r-violet); }
+.htab:hover:not(.active-l):not(.active-r) { color: var(--ink); background: rgba(255,255,255,.04); }
+
+/* ── SPLIT LAYOUT ── */
+.split-wrap {
+  display: grid;
+  grid-template-columns: 1fr 3px 1fr;
+  min-height: 780px;
+}
+
+/* centre divider */
+.divider {
+  background: linear-gradient(180deg,
+    transparent 0%, var(--l-blue) 20%, var(--r-violet) 80%, transparent 100%);
+  opacity: .35;
+  position: relative;
+}
+.divider::after {
+  content: "VS";
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: .7rem;
+  letter-spacing: .2em; color: var(--ink-dim);
+  background: #050810; padding: 6px 4px; border-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+/* ── LEFT PANEL ── */
+.left-panel {
+  background: var(--l-bg);
+  padding: 0;
+  display: flex; flex-direction: column;
+}
+.panel-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ph-title {
+  font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 1.02rem;
+}
+.ph-badge {
+  font-family: "IBM Plex Mono", monospace; font-size: .65rem; letter-spacing: .12em;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 999px;
+}
+.badge-old { background: rgba(74,158,255,.12); color: var(--l-blue); border: 1px solid rgba(74,158,255,.3); }
+.badge-new { background: rgba(167,139,250,.12); color: var(--r-violet); border: 1px solid rgba(167,139,250,.3); }
+
+/* ── RIGHT PANEL ── */
+.right-panel {
+  background: var(--r-bg);
+  display: flex; flex-direction: column;
+}
+
+/* ── Team formation (left) ── */
+.team-row {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 14px 22px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.team-member {
+  display: flex; align-items: center; gap: 6px;
+  font-family: "IBM Plex Mono", monospace; font-size: .72rem;
+  padding: 5px 10px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--l-panel);
+  transition: border-color .3s, box-shadow .3s;
+}
+.team-member .tm-dot { width: 8px; height: 8px; border-radius: 50%; }
+.tm-architect .tm-dot { background: var(--l-amber); }
+.tm-senior    .tm-dot { background: var(--l-blue); }
+.tm-dev       .tm-dot { background: var(--l-green); }
+.tm-test      .tm-dot { background: var(--l-red); }
+.tm-escalation .tm-dot { background: #C084FC; }
+.tm-active { border-color: var(--l-amber) !important; box-shadow: 0 0 10px -3px rgba(245,158,11,.5) !important; }
+
+/* ── Timeline bars (left) ── */
+.timeline-section {
+  padding: 14px 22px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  flex-shrink: 0;
+}
+.tl-label { font-family: "IBM Plex Mono", monospace; font-size: .65rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 8px; }
+.tl-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-family: "IBM Plex Mono", monospace; font-size: .67rem; }
+.tl-name { width: 110px; color: var(--ink-dim); flex-shrink: 0; }
+.tl-track { flex: 1; height: 7px; background: rgba(255,255,255,.06); border-radius: 999px; overflow: hidden; }
+.tl-fill { height: 100%; width: 0%; border-radius: 999px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+.tl-dur { width: 52px; text-align: right; color: var(--ink-dim); font-size: .62rem; }
+
+/* ── AI Prompt box (right) ── */
+.prompt-section {
+  padding: 14px 22px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  flex-shrink: 0;
+}
+.prompt-box {
+  background: rgba(167,139,250,.06);
+  border: 1px solid rgba(167,139,250,.25);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-family: "IBM Plex Mono", monospace; font-size: .72rem; line-height: 1.6;
+  color: var(--ink-dim); position: relative; overflow: hidden;
+  min-height: 60px;
+}
+.prompt-box .prompt-label {
+  font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--r-violet); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.prompt-box .prompt-label::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--r-violet); box-shadow: 0 0 8px var(--r-violet);
+  animation: breathe 2s infinite;
+}
+@keyframes breathe { 50% { opacity: .35; } }
+.prompt-text { color: var(--ink); }
+.cursor-blink {
+  display: inline-block; width: 2px; height: 13px;
+  background: var(--r-violet); margin-left: 2px; vertical-align: middle;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+.ai-time-badge {
+  margin-top: 8px;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: "IBM Plex Mono", monospace; font-size: .63rem; letter-spacing: .1em;
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(45,212,191,.08); color: var(--r-teal); border: 1px solid rgba(45,212,191,.25);
+}
+
+/* ── FILE SYSTEM TREES ── */
+.fs-section {
+  flex: 1;
+  padding: 14px 22px 14px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.fs-label {
+  font-family: "IBM Plex Mono", monospace; font-size: .65rem; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.fs-tree {
+  font-family: "IBM Plex Mono", monospace; font-size: .72rem; line-height: 1.72;
+  background: rgba(0,0,0,.3); border-radius: 8px; padding: 12px 14px;
+  flex: 1; overflow-y: auto; border: 1px solid rgba(255,255,255,.06);
+  min-height: 300px; max-height: 320px;
+}
+.fs-tree::-webkit-scrollbar { width: 6px; }
+.fs-tree::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; }
+
+/* tree node types */
+.tn { display: flex; align-items: baseline; gap: 0; }
+.tn-indent { color: var(--ink-faint); white-space: pre; }
+.tn-name { }
+.tn-dir  { color: var(--l-blue); font-weight: 600; }
+.tn-dir-r { color: var(--r-teal); font-weight: 600; }
+.tn-file { color: var(--ink-dim); }
+.tn-file-r { color: var(--r-green); }
+.tn-meta { font-size: .6rem; color: var(--l-muted); margin-left: 8px; }
+.tn-meta-r { font-size: .6rem; color: rgba(167,139,250,.5); margin-left: 8px; }
+.tn-new { animation: fadeSlide .4s ease forwards; opacity: 0; }
+@keyframes fadeSlide { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:none; } }
+.tn-ai-burst { animation: aiBurst .25s ease forwards; opacity: 0; }
+@keyframes aiBurst { from { opacity:0; transform:translateX(8px); } to { opacity:1; transform:none; } }
+
+/* ── MAINTENANCE SECTION ── */
+.maint-section {
+  padding: 12px 22px;
+  border-top: 1px solid rgba(255,255,255,.05);
+  flex-shrink: 0;
+}
+.maint-title {
+  font-family: "IBM Plex Mono", monospace; font-size: .65rem; letter-spacing: .18em;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.ticket-card {
+  background: var(--l-panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+  line-height: 1.55;
+}
+.ticket-card.right { background: var(--r-panel); }
+.tc-id { color: var(--l-amber); font-weight: 600; margin-bottom: 4px; }
+.tc-id-r { color: var(--r-violet); font-weight: 600; margin-bottom: 4px; }
+.tc-row { display: flex; gap: 6px; color: var(--ink-dim); margin-bottom: 2px; }
+.tc-key { color: var(--ink-faint); width: 80px; flex-shrink: 0; }
+.tc-val { color: var(--ink); }
+.tc-val.green { color: var(--l-green); }
+.tc-val.violet { color: var(--r-violet); }
+.tc-val.teal { color: var(--r-teal); }
+.ticket-steps {
+  margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;
+}
+.ts {
+  font-size: .58rem; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 4px;
+}
+.ts-done { background: rgba(110,231,183,.1); color: var(--l-green); border: 1px solid rgba(110,231,183,.2); }
+.ts-active { background: rgba(245,158,11,.1); color: var(--l-amber); border: 1px solid rgba(245,158,11,.3); animation: breathe 1.5s infinite; }
+.ts-wait { background: rgba(255,255,255,.04); color: var(--ink-faint); border: 1px solid var(--line); }
+.ts-ai { background: rgba(167,139,250,.1); color: var(--r-violet); border: 1px solid rgba(167,139,250,.3); animation: breathe 1.5s infinite; }
+
+/* ── MAS Agent panel (right maintenance) ── */
+.mas-card {
+  background: var(--r-panel);
+  border: 1px solid rgba(167,139,250,.2); border-radius: 8px;
+  padding: 10px 12px; font-family: "IBM Plex Mono", monospace; font-size: .68rem; line-height: 1.55;
+}
+.mas-agents { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.mas-agent {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: 6px;
+  font-size: .62rem; border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.03); color: var(--ink-dim);
+  transition: all .3s;
+}
+.mas-agent.active {
+  border-color: var(--r-violet); color: var(--r-violet);
+  background: rgba(167,139,250,.08); box-shadow: 0 0 10px -4px rgba(167,139,250,.5);
+}
+.mas-agent .ag-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ── METRICS BAR ── */
+.metrics-bar {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: #050810;
+}
+.metric-cell {
+  padding: 14px 18px; border-right: 1px solid var(--line); text-align: center;
+}
+.metric-cell:last-child { border-right: none; }
+.mc-val {
+  font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 1.7rem;
+  letter-spacing: -.03em; line-height: 1;
+}
+.mc-label { font-family: "IBM Plex Mono", monospace; font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); margin-top: 4px; }
+.mc-sub { font-size: .72rem; color: #ffffff; margin-top: 2px; }
+/*.mc-sub { font-size: .72rem; color: var(--ink-faint); margin-top: 2px; }*/
+
+/* ── CONTROLS ── */
+.controls-bar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 16px 24px;
+  background: #050810; border-top: 1px solid var(--line);
+}
+.controls-bar label { font-family: "IBM Plex Mono", monospace; font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+select {
+  font-family: "Sora", sans-serif; background: #0B0E15; color: var(--ink);
+  border: 1px solid var(--line); padding: 9px 13px; border-radius: 8px;
+  font-size: .88rem; outline: none; cursor: pointer; transition: border-color .2s;
+}
+select:hover { border-color: var(--r-violet); }
+.flex-gap { flex: 1; }
+.btn {
+  font-family: "Sora", sans-serif; font-weight: 600; font-size: .9rem; cursor: pointer;
+  padding: 10px 20px; border-radius: 9px; border: 1px solid var(--line);
+  background: #0B0E15; color: var(--ink); transition: all .2s;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.btn:hover { border-color: var(--ink-dim); transform: translateY(-1px); }
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.btn-primary {
+  background: linear-gradient(160deg, #7C3AED, #4F46E5);
+  color: #fff; border: none; box-shadow: 0 8px 22px -8px rgba(124,58,237,.8);
+}
+.btn-primary:hover:not(:disabled) { box-shadow: 0 12px 28px -8px rgba(124,58,237,.9); }
+.btn-left {
+  background: linear-gradient(160deg, #1D4ED8, #1E40AF);
+  color: #fff; border: none; box-shadow: 0 8px 22px -8px rgba(29,78,216,.8);
+}
+
+/* ── TERMINAL ── */
+.terminal-wrap { background: #050810; padding: 0 24px 24px; }
+.terminal {
+  height: 138px; overflow-y: auto;
+  background: linear-gradient(180deg,#03060B,#020509);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  font-family: "IBM Plex Mono", monospace; font-size: .84rem; line-height: 1.65;
+  padding: 12px 14px;
+}
+.terminal::-webkit-scrollbar { width: 7px; }
+.terminal::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; }
+.t-head { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; color: var(--ink-faint); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; }
+.t-dots { display: flex; gap: 5px; }
+.t-dots i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.log-line { margin-bottom: 2px; }
+.log-t { color: var(--ink-faint); margin-right: 7px; }
+
+/* ── PROGRESS BAR FILLS ── */
+.fill-blue   { background: linear-gradient(90deg, #1D4ED8, #4A9EFF); }
+.fill-amber  { background: linear-gradient(90deg, #B45309, #F59E0B); }
+.fill-green  { background: linear-gradient(90deg, #065F46, #6EE7B7); }
+.fill-red    { background: linear-gradient(90deg, #991B1B, #F87171); }
+.fill-violet { background: linear-gradient(90deg, #5B21B6, #A78BFA); }
+.fill-teal   { background: linear-gradient(90deg, #0D9488, #2DD4BF); }
+.fill-ai     { background: linear-gradient(90deg, #7C3AED, #2DD4BF); }
+
+/* speed overlay for AI side */
+.ai-speed-ring {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--r-violet); color: var(--r-violet);
+  font-family: "IBM Plex Mono", monospace; font-size: .6rem; font-weight: 600;
+  box-shadow: 0 0 12px -2px rgba(167,139,250,.5);
+}
+
+/* hidden initially */
+.hidden { display: none !important; }
+.run-overlay-btn { position:absolute; top:14px; right:14px; z-index:10; }
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="hero">
+  <div class="hero-eyebrow">Wildlife Surveillance System · Case Study</div>
+  <h1>
+    <span class="old">Traditional Dev</span>
+    <span class="vs">vs</span>
+    <span class="new">AI-Assisted Dev</span>
+  </h1>
+  <p class="hero-sub">How building a production software system — from blank canvas to shipped product — has fundamentally changed with AI code generation tools like Claude and Codex.</p>
+  <div class="hero-tabs">
+    <button class="htab active-l" onclick="setMode('new_product')">New Product Development</button>
+    <button class="htab" onclick="setMode('maintenance')">Maintenance & Escalations</button>
+  </div>
+</header>
+
+<!-- ── METRICS ── -->
+<div class="metrics-bar">
+  <div class="metric-cell">
+    <div class="mc-val" style="color:var(--l-blue)">8–12 <span style="font-size:1rem">mo</span></div>
+    <div class="mc-label">Traditional Timeline</div>
+    <div class="mc-sub">Architect → Design → Build → Test</div>
+  </div>
+  <div class="metric-cell">
+    <div class="mc-val" style="color:var(--r-violet)" id="mc-ai-time">Days</div>
+    <div class="mc-label">AI-Assisted Timeline</div>
+    <div class="mc-sub">Prompt → Generate → Review</div>
+  </div>
+  <div class="metric-cell">
+    <div class="mc-val" style="color:var(--l-amber)">12–15</div>
+    <div class="mc-label">Team Size (Traditional)</div>
+    <div class="mc-sub">Architects, Devs, QA, Leads</div>
+  </div>
+  <div class="metric-cell">
+    <div class="mc-val" style="color:var(--r-green)">3–5</div>
+    <div class="mc-label">Team Size (AI)</div>
+    <div class="mc-sub">Prompt engineers + reviewers</div>
+  </div>
+</div>
+
+<!-- ── SPLIT PANELS ── -->
+<div class="split-wrap" id="split-wrap">
+
+  <!-- ══════════ LEFT – TRADITIONAL ══════════ -->
+  <div class="left-panel">
+    <div class="panel-header">
+      <div>
+        <div class="ph-title" style="color:var(--l-blue)">🏛 Traditional Software Development</div>
+        <div style="font-size:.75rem;color:var(--ink-dim);margin-top:3px;">Human team · Manual code · Sequential process</div>
+      </div>
+      <span class="ph-badge badge-old">Pre-AI Era</span>
+      <button class="btn btn-left" id="btn-left" onclick="runLeft()" style="margin-left:auto;">▶ Run Traditional</button>
+    </div>
+
+    <!-- Team members -->
+    <div class="team-row" id="team-row">
+      <div class="team-member tm-architect" id="tm-arch"><span class="tm-dot"></span> Architect</div>
+      <div class="team-member tm-senior"    id="tm-senior"><span class="tm-dot"></span> Sr. Engineer</div>
+      <div class="team-member tm-dev"       id="tm-dev1"><span class="tm-dot"></span> Dev · Edge</div>
+      <div class="team-member tm-dev"       id="tm-dev2"><span class="tm-dot"></span> Dev · Cloud</div>
+      <div class="team-member tm-dev"       id="tm-dev3"><span class="tm-dot"></span> Dev · App</div>
+      <div class="team-member tm-test"      id="tm-test"><span class="tm-dot"></span> QA Engineer</div>
+      <div class="team-member tm-escalation" id="tm-esc" style="display:none"><span class="tm-dot"></span> Escalation Eng</div>
+    </div>
+
+    <!-- Timeline bars (new product) -->
+    <div class="timeline-section" id="tl-section">
+      <div class="tl-label">Development Timeline</div>
+      <div class="tl-row"><span class="tl-name">System Design</span><div class="tl-track"><div class="tl-fill fill-amber" id="tl-design"></div></div><span class="tl-dur" id="tl-d-design">6–8 wk</span></div>
+      <div class="tl-row"><span class="tl-name">Edge Module</span>  <div class="tl-track"><div class="tl-fill fill-blue"  id="tl-edge"></div></div><span class="tl-dur" id="tl-d-edge">10–14 wk</span></div>
+      <div class="tl-row"><span class="tl-name">Cloud Module</span> <div class="tl-track"><div class="tl-fill fill-blue"  id="tl-cloud"></div></div><span class="tl-dur" id="tl-d-cloud">8–12 wk</span></div>
+      <div class="tl-row"><span class="tl-name">App / Web</span>   <div class="tl-track"><div class="tl-fill fill-green" id="tl-app"></div></div><span class="tl-dur" id="tl-d-app">8–10 wk</span></div>
+      <div class="tl-row"><span class="tl-name">Integration</span> <div class="tl-track"><div class="tl-fill fill-red"   id="tl-int"></div></div><span class="tl-dur" id="tl-d-int">4–6 wk</span></div>
+      <div class="tl-row"><span class="tl-name">QA & Testing</span><div class="tl-track"><div class="tl-fill fill-red"   id="tl-qa"></div></div><span class="tl-dur" id="tl-d-qa">6–8 wk</span></div>
+    </div>
+
+    <!-- Maintenance timeline (hidden initially) -->
+    <div class="timeline-section hidden" id="tl-maint-section">
+      <div class="tl-label">Escalation Process Timeline</div>
+      <div class="tl-row"><span class="tl-name">Customer logs</span>  <div class="tl-track"><div class="tl-fill fill-amber" id="tl-m1"></div></div><span class="tl-dur">Day 1</span></div>
+      <div class="tl-row"><span class="tl-name">L1 Triage</span>      <div class="tl-track"><div class="tl-fill fill-blue"  id="tl-m2"></div></div><span class="tl-dur">Day 1–2</span></div>
+      <div class="tl-row"><span class="tl-name">Dev RCA</span>         <div class="tl-track"><div class="tl-fill fill-red"   id="tl-m3"></div></div><span class="tl-dur">Day 3–7</span></div>
+      <div class="tl-row"><span class="tl-name">Fix & Review</span>    <div class="tl-track"><div class="tl-fill fill-green" id="tl-m4"></div></div><span class="tl-dur">Day 7–10</span></div>
+      <div class="tl-row"><span class="tl-name">Regression QA</span>   <div class="tl-track"><div class="tl-fill fill-red"   id="tl-m5"></div></div><span class="tl-dur">Day 10–14</span></div>
+      <div class="tl-row"><span class="tl-name">Patch Release</span>   <div class="tl-track"><div class="tl-fill fill-blue"  id="tl-m6"></div></div><span class="tl-dur">Day 14–21</span></div>
+    </div>
+
+    <!-- Filesystem left -->
+    <div class="fs-section">
+      <div class="fs-label">
+        <span>📁 Project Filesystem · Built by team</span>
+        <span id="l-filecount" style="color:var(--l-blue);font-size:.62rem;">0 files</span>
+      </div>
+      <div class="fs-tree" id="l-tree">
+        <div style="color:var(--ink-faint);font-size:.68rem;">▷ Run simulation to watch team build files one by one…</div>
+      </div>
+    </div>
+
+    <!-- Maintenance view left -->
+    <div class="maint-section" id="l-maint" style="display:none;">
+      <div class="maint-title" style="color:var(--l-amber)">🎫 Customer Escalation Ticket</div>
+      <div class="ticket-card" id="l-ticket">
+        <div class="tc-id">TICKET-2847 · Wildlife Surveillance System</div>
+        <div class="tc-row"><span class="tc-key">Issue:</span><span class="tc-val">Leopard detection false positives in low light — alarm triggering on shadows</span></div>
+        <div class="tc-row"><span class="tc-key">Customer:</span><span class="tc-val">Ranthambore Forest Dept</span></div>
+        <div class="tc-row"><span class="tc-key">Severity:</span><span class="tc-val" style="color:var(--l-red)">HIGH</span></div>
+        <div class="tc-row"><span class="tc-key">Assigned:</span><span class="tc-val" id="tc-assigned">—</span></div>
+        <div class="tc-row"><span class="tc-key">RCA:</span><span class="tc-val green" id="tc-rca">Pending…</span></div>
+        <div class="ticket-steps" id="l-steps">
+          <span class="ts ts-wait">Customer logs</span>
+          <span class="ts ts-wait">L1 Triage</span>
+          <span class="ts ts-wait">Dev Assessment</span>
+          <span class="ts ts-wait">RCA Report</span>
+          <span class="ts ts-wait">Fix Developed</span>
+          <span class="ts ts-wait">QA Regression</span>
+          <span class="ts ts-wait">Patch Released</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CENTRE DIVIDER ── -->
+  <div class="divider"></div>
+
+  <!-- ══════════ RIGHT – AI ══════════ -->
+  <div class="right-panel">
+    <div class="panel-header">
+      <div>
+        <div class="ph-title" style="color:var(--r-violet)">🤖 AI-Assisted Development</div>
+        <div style="font-size:.75rem;color:var(--ink-dim);margin-top:3px;">Claude · Codex · MAS Agents · Zero manual code</div>
+      </div>
+      <span class="ph-badge badge-new">AI Era</span>
+      <button class="btn btn-primary" id="btn-right" onclick="runRight()" style="margin-left:auto;">⚡ Run AI Generation</button>
+    </div>
+
+    <!-- Prompt input section -->
+    <div class="prompt-section" id="r-prompt-section">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px;">Developer Prompt → Claude</div>
+      <div class="prompt-box">
+        <div class="prompt-label">Claude Prompt</div>
+        <div class="prompt-text" id="prompt-text"></div><span class="cursor-blink" id="prompt-cursor"></span>
+      </div>
+      <div class="ai-time-badge" id="ai-time-badge" style="opacity:0;">
+        ⚡ Entire project generated in <span id="ai-gen-time">—</span>
+      </div>
+    </div>
+
+    <!-- MAS Agent section (maintenance, hidden initially) -->
+    <div class="prompt-section hidden" id="r-mas-section">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px;">Multi-Agent System (MAS) · Auto-Escalation</div>
+      <div class="mas-card">
+        <div class="tc-id-r">TICKET-2847 · Auto-assigned to MAS Pipeline</div>
+        <div class="tc-row" style="margin-top:4px;"><span class="tc-key">Jira read:</span><span class="tc-val teal" id="mas-jira">Pending</span></div>
+        <div class="tc-row"><span class="tc-key">Analysis:</span><span class="tc-val violet" id="mas-analysis">—</span></div>
+        <div class="tc-row"><span class="tc-key">RCA:</span><span class="tc-val teal" id="mas-rca">—</span></div>
+        <div class="tc-row"><span class="tc-key">Fix PR:</span><span class="tc-val" id="mas-fix">—</span></div>
+        <div class="mas-agents" id="mas-agents">
+          <div class="mas-agent" id="ag-reader"><span class="ag-dot"></span>Jira Reader</div>
+          <div class="mas-agent" id="ag-codebase"><span class="ag-dot"></span>Codebase Analyser</div>
+          <div class="mas-agent" id="ag-rca"><span class="ag-dot"></span>RCA Agent</div>
+          <div class="mas-agent" id="ag-fix"><span class="ag-dot"></span>Fix Generator</div>
+          <div class="mas-agent" id="ag-test"><span class="ag-dot"></span>Test Runner</div>
+          <div class="mas-agent" id="ag-pr"><span class="ag-dot"></span>PR Creator</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filesystem right -->
+    <div class="fs-section">
+      <div class="fs-label">
+        <span>📁 Project Filesystem · Generated by AI</span>
+        <span id="r-filecount" style="color:var(--r-teal);font-size:.62rem;">0 files</span>
+      </div>
+      <div class="fs-tree" id="r-tree">
+        <div style="color:var(--ink-faint);font-size:.68rem;">▷ Run simulation to see Claude generate entire project instantly…</div>
+      </div>
+    </div>
+
+    <!-- Maintenance right (hidden) -->
+    <div class="maint-section hidden" id="r-maint">
+      <div class="maint-title" style="color:var(--r-violet)">☸ MAS Pipeline · Automated Resolution</div>
+      <div class="ticket-card right">
+        <div class="tc-row"><span class="tc-key">Resolution:</span><span class="tc-val teal" id="mas-resolution">Automated end-to-end</span></div>
+        <div class="tc-row"><span class="tc-key">Time taken:</span><span class="tc-val violet" id="mas-time">—</span></div>
+        <div class="ticket-steps" id="r-steps">
+          <span class="ts ts-wait">Jira Ingested</span>
+          <span class="ts ts-wait">Code Analysed</span>
+          <span class="ts ts-wait">RCA Generated</span>
+          <span class="ts ts-wait">Fix Created</span>
+          <span class="ts ts-wait">Tests Passed</span>
+          <span class="ts ts-wait">PR Merged</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /right panel -->
+
+</div><!-- /split-wrap -->
+
+<!-- ── CONTROLS ── -->
+<div class="controls-bar">
+  <label>Mode</label>
+  <select id="mode-select" onchange="setMode(this.value)">
+    <option value="new_product">New Product Development</option>
+    <option value="maintenance">Maintenance &amp; Escalations</option>
+  </select>
+  <label style="margin-left:10px;">Speed</label>
+  <select id="speed-sel">
+    <option value="1">1× — Learn step by step</option>
+    <option value="2" selected>2× — Normal</option>
+    <option value="4">4× — Fast</option>
+  </select>
+  <button class="btn" onclick="resetAll()">↺ Reset</button>
+</div>
+
+<!-- ── TERMINAL ── -->
+<div class="terminal-wrap">
+  <div class="terminal" id="terminal">
+    <div class="t-head">
+      <span class="t-dots"><i style="background:#F87171"></i><i style="background:#FBBF24"></i><i style="background:#4ADE80"></i></span>
+      simulation.log · wildlife-surveillance-system
+    </div>
+    <div class="log-line"><span class="log-t">[SYSTEM]</span> <span style="color:#fff">Simulation ready. Select mode above, then press "Run Traditional" (left) or "Run AI Generation" (right) — or both together to compare.</span></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════ */
+
+const NEW_PRODUCT_TREE = [
+  // [indent, name, type, author, delay_factor]
+  ['', 'wildlife-surveillance-system/', 'dir', 'Architect', 0],
+  ['  ', 'README.md',                   'file','Architect', 1],
+  ['  ', 'architecture/', 'dir','Architect', 1],
+  ['  │ ', 'system_design.drawio',      'file','Architect', 2],
+  ['  │ ', 'module_specs.pdf',          'file','Architect', 2],
+  ['  │ ', 'api_contracts.yaml',        'file','Sr. Engineer', 3],
+  ['  ', 'edge-computing/', 'dir','Sr. Engineer', 3],
+  ['  │ ', 'leopard_detection/', 'dir','Dev·Edge', 4],
+  ['  │ │ ', 'detector.py',             'file','Dev·Edge', 5],
+  ['  │ │ ', 'model_loader.py',         'file','Dev·Edge', 5],
+  ['  │ │ ', 'yolov8_weights.pt',       'file','Dev·Edge', 6],
+  ['  │ │ ', 'config.yaml',             'file','Dev·Edge', 6],
+  ['  │ │ ', 'test_detector.py',        'file','QA Eng', 10],
+  ['  │ ', 'edge_cloud_comm/', 'dir','Dev·Edge', 6],
+  ['  │ │ ', 'mqtt_client.py',          'file','Dev·Edge', 7],
+  ['  │ │ ', 'edge_sync.py',            'file','Dev·Edge', 7],
+  ['  │ │ ', 'protocols.py',            'file','Dev·Edge', 8],
+  ['  ', 'cloud-backend/', 'dir','Sr. Engineer', 4],
+  ['  │ ', 'api/', 'dir','Dev·Cloud', 5],
+  ['  │ │ ', 'main.py',                 'file','Dev·Cloud', 6],
+  ['  │ │ ', 'routes.py',               'file','Dev·Cloud', 7],
+  ['  │ │ ', 'auth.py',                 'file','Dev·Cloud', 7],
+  ['  │ ', 'services/', 'dir','Dev·Cloud', 5],
+  ['  │ │ ', 'alert_service.py',        'file','Dev·Cloud', 8],
+  ['  │ │ ', 'notification.py',         'file','Dev·Cloud', 8],
+  ['  │ │ ', 'storage.py',              'file','Dev·Cloud', 9],
+  ['  │ ', 'database/', 'dir','Dev·Cloud', 5],
+  ['  │ │ ', 'models.py',               'file','Dev·Cloud', 9],
+  ['  │ │ ', 'migrations/',             'dir','Dev·Cloud', 9],
+  ['  │ │ │ ', '001_init.sql',          'file','Dev·Cloud', 10],
+  ['  │ ', 'tests/', 'dir','QA Eng', 10],
+  ['  │ │ ', 'test_api.py',             'file','QA Eng', 11],
+  ['  │ │ ', 'test_alerts.py',          'file','QA Eng', 11],
+  ['  ', 'mobile-app/', 'dir','Dev·App', 5],
+  ['  │ ', 'src/', 'dir','Dev·App', 6],
+  ['  │ │ ', 'App.tsx',                 'file','Dev·App', 7],
+  ['  │ │ ', 'screens/', 'dir','Dev·App', 7],
+  ['  │ │ │ ', 'Dashboard.tsx',         'file','Dev·App', 8],
+  ['  │ │ │ ', 'AlertMap.tsx',          'file','Dev·App', 8],
+  ['  │ │ │ ', 'CameraFeed.tsx',        'file','Dev·App', 9],
+  ['  │ │ ', 'services/', 'dir','Dev·App', 8],
+  ['  │ │ │ ', 'api.ts',                'file','Dev·App', 9],
+  ['  │ │ │ ', 'notifications.ts',      'file','Dev·App', 9],
+  ['  ', 'web-dashboard/', 'dir','Dev·App', 5],
+  ['  │ ', 'components/', 'dir','Dev·App', 7],
+  ['  │ │ ', 'LiveFeed.jsx',            'file','Dev·App', 8],
+  ['  │ │ ', 'HeatMap.jsx',             'file','Dev·App', 9],
+  ['  │ │ ', 'AlertPanel.jsx',          'file','Dev·App', 9],
+  ['  │ ', 'index.html',                'file','Dev·App', 10],
+  ['  ', 'devops/', 'dir','Sr. Engineer', 8],
+  ['  │ ', 'Dockerfile',                'file','Sr. Engineer', 9],
+  ['  │ ', 'docker-compose.yml',        'file','Sr. Engineer', 9],
+  ['  │ ', 'k8s/', 'dir','Sr. Engineer', 10],
+  ['  │ │ ', 'deployment.yaml',         'file','Sr. Engineer', 10],
+  ['  │ │ ', 'service.yaml',            'file','Sr. Engineer', 11],
+  ['  │ ', 'ci-cd/', 'dir','Sr. Engineer', 10],
+  ['  │ │ ', 'github-actions.yml',      'file','Sr. Engineer', 11],
+  ['  │ │ ', 'sonar-config.xml',        'file','Sr. Engineer', 12],
+  ['  ', 'integration-tests/', 'dir','QA Eng', 11],
+  ['  │ ', 'e2e_flow.py',               'file','QA Eng', 12],
+  ['  │ ', 'load_test.py',              'file','QA Eng', 12],
+  ['  │ ', 'regression_suite.py',       'file','QA Eng', 13],
+  ['  ', 'docs/', 'dir','Architect', 12],
+  ['  │ ', 'user_manual.pdf',           'file','Architect', 13],
+  ['  │ ', 'deployment_guide.md',       'file','Sr. Engineer', 13],
+  ['  │ ', 'api_reference.html',        'file','Sr. Engineer', 14],
+];
+
+const AUTHOR_COLORS = {
+  'Architect':   '#F59E0B',
+  'Sr. Engineer':'#4A9EFF',
+  'Dev·Edge':    '#6EE7B7',
+  'Dev·Cloud':   '#93C5FD',
+  'Dev·App':     '#FCA5A5',
+  'QA Eng':      '#F87171',
+};
+
+// AI generates identical tree, no author labels
+const AI_TREE = NEW_PRODUCT_TREE;
+
+const PROMPT_TEXT = `I want to develop a Wildlife Surveillance System using an edge device. When a leopard is detected, it should:
+1. Generate an alarm on the edge device
+2. Send a real-time notification with image to the forest officer's mobile app
+3. Log the event to a cloud dashboard with GPS coordinates
+4. Support 50+ edge devices from a single cloud backend
+
+Please design the entire system architecture and generate the complete project with all modules: edge computing (YOLOv8 detection), cloud backend (FastAPI), mobile app (React Native), web dashboard, DevOps setup, and full test suite.`;
+
+const TL_FILLS = {
+  'tl-design': {el: null, pct: 100, color: 'fill-amber', delay: 0},
+  'tl-edge':   {el: null, pct: 100, color: 'fill-blue',  delay: 800},
+  'tl-cloud':  {el: null, pct: 100, color: 'fill-blue',  delay: 1400},
+  'tl-app':    {el: null, pct: 100, color: 'fill-green', delay: 1800},
+  'tl-int':    {el: null, pct: 100, color: 'fill-red',   delay: 2600},
+  'tl-qa':     {el: null, pct: 100, color: 'fill-red',   delay: 3200},
+};
+
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+let currentMode = 'new_product';
+let leftRunning = false, rightRunning = false;
+let leftFileCount = 0, rightFileCount = 0;
+let leftDone = false, rightDone = false;
+const terminal = document.getElementById('terminal');
+
+/* ═══════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════ */
+function log(msg, color='#2DD4BF') {
+  const now = new Date();
+  const t = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3,'0');
+  const d = document.createElement('div');
+  d.className = 'log-line';
+  d.innerHTML = `<span class="log-t">[${t}]</span> <span style="color:${color}">${msg}</span>`;
+  terminal.appendChild(d);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function speed() { return parseFloat(document.getElementById('speed-sel').value); }
+function t(ms)   { return ms / speed(); }
+
+function activateTM(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('tm-active');
+}
+function deactivateTM(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('tm-active');
+}
+
+/* ═══════════════════════════════════════════════════
+   MODE SWITCHING
+═══════════════════════════════════════════════════ */
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('mode-select').value = mode;
+  // update tab styles
+  document.querySelectorAll('.htab').forEach((b,i) => {
+    b.classList.remove('active-l','active-r');
+    if ((mode==='new_product' && i===0)||(mode==='maintenance' && i===1)) {
+      b.classList.add(i===0?'active-l':'active-l');
+    }
+  });
+  document.querySelectorAll('.htab')[mode==='new_product'?0:1].classList.add('active-l');
+  resetAll();
+  // show/hide sections
+  const isNew = mode === 'new_product';
+  document.getElementById('tl-section').classList.toggle('hidden', !isNew);
+  document.getElementById('tl-maint-section').classList.toggle('hidden', isNew);
+  document.getElementById('l-maint').style.display = isNew ? 'none' : '';
+  document.getElementById('r-maint').classList.toggle('hidden', isNew);
+  document.getElementById('r-prompt-section').classList.toggle('hidden', !isNew);
+  document.getElementById('r-mas-section').classList.toggle('hidden', isNew);
+  // maintenance team
+  document.getElementById('tm-esc').style.display = isNew ? 'none' : '';
+  ['tm-dev1','tm-dev2','tm-dev3'].forEach(id => document.getElementById(id).style.display = isNew ? '' : 'none');
+  // metric top right
+  document.getElementById('mc-ai-time').innerText = isNew ? 'Days' : 'Minutes';
+}
+
+/* ═══════════════════════════════════════════════════
+   LEFT – TRADITIONAL
+═══════════════════════════════════════════════════ */
+async function runLeft() {
+  if (leftRunning) return;
+  leftRunning = true;
+  document.getElementById('btn-left').disabled = true;
+  if (currentMode === 'new_product') await runLeftNewProduct();
+  else await runLeftMaintenance();
+  leftRunning = false;
+  leftDone = true;
+  document.getElementById('btn-left').disabled = false;
+}
+
+async function runLeftNewProduct() {
+  log('▶ [TRADITIONAL] Sprint 0: Team formation & project kickoff', '#4A9EFF');
+  activateTM('tm-arch');
+  await delay(t(600));
+
+  // Animate timeline bars
+  const bars = ['tl-design','tl-edge','tl-cloud','tl-app','tl-int','tl-qa'];
+  const names= ['System Architecture Design','Edge Computing Module','Cloud Backend','App & Web Development','System Integration','QA & Testing'];
+  const authors=['Architect','Sr. Engineer+Dev·Edge','Dev·Cloud','Dev·App','Sr. Engineer','QA Eng'];
+  const colors =['fill-amber','fill-blue','fill-blue','fill-green','fill-red','fill-red'];
+  const teamIds=[['tm-arch'],['tm-senior','tm-dev1'],['tm-dev2'],['tm-dev3'],['tm-senior'],['tm-test']];
+  const logColors=['#F59E0B','#4A9EFF','#93C5FD','#6EE7B7','#F87171','#F87171'];
+
+  for (let i = 0; i < bars.length; i++) {
+    // deactivate previous
+    if (i > 0) teamIds[i-1].forEach(id => deactivateTM(id));
+    teamIds[i].forEach(id => activateTM(id));
+    log(`[PHASE ${i+1}] ${names[i]} — ${authors[i]} team working…`, logColors[i]);
+    const el = document.getElementById(bars[i]);
+    el.style.width = '0%';
+    // animate bar
+    await delay(t(200));
+    el.style.transition = `width ${t(1200)}ms cubic-bezier(.4,0,.2,1)`;
+    el.style.width = '100%';
+    await delay(t(1400));
+  }
+  teamIds[teamIds.length-1].forEach(id => deactivateTM(id));
+
+  // Now build filesystem slowly
+  log('[FILESYSTEM] Team committing code to Git repository…', '#6EE7B7');
+  await buildTreeLeft(NEW_PRODUCT_TREE);
+  log('✅ [COMPLETE] Product delivered after 8–12 months of development.', '#6EE7B7');
+}
+
+async function buildTreeLeft(treeData) {
+  const container = document.getElementById('l-tree');
+  container.innerHTML = '';
+  leftFileCount = 0;
+
+  // sort by delay factor
+  const sorted = [...treeData].sort((a,b) => a[4] - b[4]);
+
+  for (const [indent, name, type, author, df] of sorted) {
+    await delay(t(120 + df * 20));
+    const isDir = type === 'dir';
+    const row = document.createElement('div');
+    row.className = 'tn tn-new';
+    const color = AUTHOR_COLORS[author] || '#7C8CA3';
+    row.innerHTML =
+      `<span class="tn-indent">${indent}</span>` +
+      `<span class="${isDir ? 'tn-dir' : 'tn-file'}">${isDir ? '📁' : '📄'} ${name}</span>` +
+      `<span class="tn-meta" style="color:${color}">← ${author}</span>`;
+    container.appendChild(row);
+    container.scrollTop = container.scrollHeight;
+    if (!isDir) {
+      leftFileCount++;
+      document.getElementById('l-filecount').innerText = leftFileCount + ' files';
+    }
+  }
+}
+
+async function runLeftMaintenance() {
+  log('▶ [TRADITIONAL] Customer escalation received — assigning ticket…', '#F59E0B');
+  document.getElementById('l-maint').style.display = '';
+  activateTM('tm-esc');
+
+  const steps = document.querySelectorAll('#l-steps .ts');
+  const stepData = [
+    { key: 'Customer logs', log: 'Customer logged TICKET-2847 — Leopard detection false positives', assigned: 'L1 Support', color: '#F59E0B' },
+    { key: 'L1 Triage', log: 'L1 Support: initial triage → reproducing issue in lab environment', assigned: 'L1 Support → Escalation', color: '#4A9EFF' },
+    { key: 'Dev Assessment', log: 'Escalation Eng: pulling Git history, analysing detector.py logs…', assigned: 'Escalation Eng', color: '#F59E0B' },
+    { key: 'RCA Report', log: 'RCA: YOLOv8 confidence threshold too low for IR mode — conf=0.35 → should be 0.52', assigned: 'Dev Team', color: '#6EE7B7' },
+    { key: 'Fix Developed', log: 'Fix committed: config.yaml confidence_threshold_night: 0.52 + IR preprocessing filter', assigned: 'Dev + QA', color: '#93C5FD' },
+    { key: 'QA Regression', log: 'Running 847 regression test cases… 12 edge cases added for night detection', assigned: 'QA Team', color: '#F87171' },
+    { key: 'Patch Released', log: '✅ Patch v2.1.4 released to Ranthambore Forest Dept — ticket closed Day 17', assigned: 'Released', color: '#6EE7B7' },
+  ];
+
+  // Animate timeline bars
+  const tlIds = ['tl-m1','tl-m2','tl-m3','tl-m4','tl-m5','tl-m6'];
+  const mTls  = tlIds.map(id => document.getElementById(id)).filter(Boolean);
+
+  for (let i = 0; i < stepData.length; i++) {
+    steps[i].className = 'ts ts-active';
+    document.getElementById('tc-assigned').innerText = stepData[i].assigned;
+    log(`[DAY ${i===0?1:i<=1?'1–2':i<=2?'3–7':i<=3?'7–10':i<=4?'10–12':i<=5?'12–16':'17'}] ${stepData[i].log}`, stepData[i].color);
+    if (i === 3) document.getElementById('tc-rca').innerText = 'YOLOv8 conf threshold too low in night IR mode';
+    if (mTls[i]) {
+      mTls[i].style.transition = `width ${t(1000)}ms ease`;
+      mTls[i].style.width = '100%';
+    }
+    await delay(t(1400));
+    steps[i].className = 'ts ts-done';
+  }
+  deactivateTM('tm-esc');
+  log('⏱ [TRADITIONAL] Total resolution time: 17 days. 6 handoffs. 3 teams involved.', '#F87171');
+}
+
+/* ═══════════════════════════════════════════════════
+   RIGHT – AI
+═══════════════════════════════════════════════════ */
+async function runRight() {
+  if (rightRunning) return;
+  rightRunning = true;
+  document.getElementById('btn-right').disabled = true;
+  if (currentMode === 'new_product') await runRightNewProduct();
+  else await runRightMaintenance();
+  rightRunning = false;
+  rightDone = true;
+  document.getElementById('btn-right').disabled = false;
+}
+
+async function runRightNewProduct() {
+  log('⚡ [AI] Developer writing Claude prompt…', '#A78BFA');
+  // Type the prompt
+  const el = document.getElementById('prompt-text');
+  el.innerText = '';
+  document.getElementById('prompt-cursor').style.display = 'inline-block';
+  const chars = PROMPT_TEXT;
+  const chunkSize = Math.ceil(chars.length / 80);
+  for (let i = 0; i < chars.length; i += chunkSize) {
+    el.innerText += chars.slice(i, i + chunkSize);
+    await delay(t(28));
+  }
+  document.getElementById('prompt-cursor').style.display = 'none';
+  log('⚡ [CLAUDE] Prompt received — analysing requirements & generating project…', '#A78BFA');
+  await delay(t(600));
+
+  // AI generates everything at once — burst animation
+  log('⚡ [CLAUDE] Generating: Architecture → Edge → Cloud → App → DevOps → Tests…', '#2DD4BF');
+  await buildTreeRight(AI_TREE);
+
+  const genTime = (1.2 / speed()).toFixed(1);
+  document.getElementById('ai-gen-time').innerText = `~${genTime}s`;
+  document.getElementById('ai-time-badge').style.opacity = '1';
+  document.getElementById('ai-time-badge').style.transition = 'opacity .5s';
+  log(`✅ [CLAUDE] Complete project generated — ${rightFileCount} files across all modules. Ready to deploy.`, '#4ADE80');
+  log('💡 Developer effort: writing 1 prompt. Review time: ~2 hours.', '#2DD4BF');
+}
+
+async function buildTreeRight(treeData) {
+  const container = document.getElementById('r-tree');
+  container.innerHTML = '';
+  rightFileCount = 0;
+
+  // AI generates in rapid bursts (much faster, no authoring delay)
+  for (const [indent, name, type,,] of treeData) {
+    await delay(t(18)); // very fast — AI generation
+    const isDir = type === 'dir';
+    const row = document.createElement('div');
+    row.className = 'tn tn-ai-burst';
+    row.innerHTML =
+      `<span class="tn-indent">${indent}</span>` +
+      `<span class="${isDir ? 'tn-dir-r' : 'tn-file-r'}">${isDir ? '📁' : '📄'} ${name}</span>` +
+      `<span class="tn-meta-r">✦ claude</span>`;
+    container.appendChild(row);
+    container.scrollTop = container.scrollHeight;
+    if (!isDir) {
+      rightFileCount++;
+      document.getElementById('r-filecount').innerText = rightFileCount + ' files';
+    }
+  }
+}
+
+async function runRightMaintenance() {
+  document.getElementById('r-maint').classList.remove('hidden');
+  log('⚡ [MAS] Jira webhook fired — Multi-Agent System pipeline starting…', '#A78BFA');
+
+  const agents   = ['ag-reader','ag-codebase','ag-rca','ag-fix','ag-test','ag-pr'];
+  const rSteps   = document.querySelectorAll('#r-steps .ts');
+  const masLogs  = [
+    { agent:'ag-reader',   field:'mas-jira',     val:'TICKET-2847 parsed — issue: false positives, component: leopard_detection',         color:'#2DD4BF', step:'Jira Ingested' },
+    { agent:'ag-codebase', field:'mas-analysis', val:'Cloned repo · scanned 67 files · identified detector.py:L142 confidence config',   color:'#A78BFA', step:'Code Analysed' },
+    { agent:'ag-rca',      field:'mas-rca',       val:'YOLOv8 night IR mode conf_threshold=0.35 → below recommended 0.52 for low-light', color:'#4ADE80', step:'RCA Generated' },
+    { agent:'ag-fix',      field:'mas-fix',       val:'config.yaml patched · IR preprocessing filter added · unit tests updated',        color:'#38BDF8', step:'Fix Created'   },
+    { agent:'ag-test',     field:'mas-fix',       val:'847 regression tests passed · 12 new night-detection cases — all green',          color:'#4ADE80', step:'Tests Passed'  },
+    { agent:'ag-pr',       field:'mas-resolution',val:'PR #294 auto-merged · Patch deployed to all 50 customer instances via CI/CD',     color:'#E879F9', step:'PR Merged'     },
+  ];
+
+  for (let i = 0; i < masLogs.length; i++) {
+    const m = masLogs[i];
+    document.getElementById(m.agent).classList.add('active');
+    document.getElementById(m.field).innerText = m.val;
+    rSteps[i].className = 'ts ts-ai';
+    log(`⚡ [${m.step.toUpperCase()}] ${m.val}`, m.color);
+    await delay(t(1100));
+    document.getElementById(m.agent).classList.remove('active');
+    rSteps[i].className = 'ts ts-done';
+  }
+
+  document.getElementById('mas-time').innerText = `${(6.6/speed()).toFixed(1)} minutes`;
+  log('✅ [MAS] Ticket resolved in minutes. Zero human handoffs. Patch live across all customers.', '#4ADE80');
+  log('📊 [COMPARISON] Traditional: 17 days · 3 teams · 6 handoffs → MAS: ~7 min · 0 humans · 1 pipeline', '#E879F9');
+}
+
+/* ═══════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════ */
+function resetAll() {
+  leftRunning = false; rightRunning = false;
+  leftDone = false; rightDone = false;
+  leftFileCount = 0; rightFileCount = 0;
+
+  document.getElementById('btn-left').disabled = false;
+  document.getElementById('btn-right').disabled = false;
+
+  // clear trees
+  document.getElementById('l-tree').innerHTML = '<div style="color:var(--ink-faint);font-size:.68rem;">▷ Run simulation to watch team build files one by one…</div>';
+  document.getElementById('r-tree').innerHTML = '<div style="color:var(--ink-faint);font-size:.68rem;">▷ Run simulation to see Claude generate entire project instantly…</div>';
+  document.getElementById('l-filecount').innerText = '0 files';
+  document.getElementById('r-filecount').innerText = '0 files';
+
+  // reset timeline bars
+  ['tl-design','tl-edge','tl-cloud','tl-app','tl-int','tl-qa',
+   'tl-m1','tl-m2','tl-m3','tl-m4','tl-m5','tl-m6'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.transition = 'none'; el.style.width = '0%'; }
+  });
+
+  // reset team members
+  document.querySelectorAll('.team-member').forEach(el => el.classList.remove('tm-active'));
+
+  // reset prompt
+  document.getElementById('prompt-text').innerText = '';
+  document.getElementById('prompt-cursor').style.display = 'none';
+  document.getElementById('ai-time-badge').style.opacity = '0';
+
+  // reset ticket
+  document.getElementById('tc-assigned').innerText = '—';
+  document.getElementById('tc-rca').innerText = 'Pending…';
+  document.querySelectorAll('#l-steps .ts').forEach(s => s.className = 'ts ts-wait');
+  document.querySelectorAll('#r-steps .ts').forEach(s => s.className = 'ts ts-wait');
+
+  // reset MAS
+  ['ag-reader','ag-codebase','ag-rca','ag-fix','ag-test','ag-pr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  const masFields = ['mas-jira','mas-analysis','mas-rca','mas-fix','mas-resolution'];
+  masFields.forEach(id => { const el = document.getElementById(id); if(el) el.innerText = id==='mas-jira'?'Pending':'—'; });
+  document.getElementById('mas-time').innerText = '—';
+
+  log('↺ Simulation reset.', '#4B5563');
+}
+
+// Init
+setMode('new_product');
+</script>
+</body>
+</html>

@@ -1,0 +1,696 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Smart Water Cycle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a 3D water cycle (river, treatment plant, town, sewage plant, reuse) on one stage, a step rail, the caption, then the parts and the ways AI helps. */
+:root{
+  --bg:#f0f5f7; --surface:#ffffff; --ink:#132029; --muted:#55666f; --line:#d6e2e7;
+  --accent:#0b6fa4; --accent-ink:#ffffff;
+  --read:#0f9bd7; --cmd:#1fae55; --msg:#d83a83; --ai:#6a55e6; --warn:#d9861a; --ok:#14894f;
+  --cold:#2f8fe0; --warm:#8f6a36; --reuse:#20a88e;
+  --sky:#e3edf1; --ground:#8fa27a;
+  --font-display:"Outfit", "Segoe UI", system-ui, sans-serif;
+  --font-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1317; --surface:#121d22; --ink:#e2edf2; --muted:#92a6b0; --line:#22343c;
+  --accent:#4cb4ec; --accent-ink:#04131c;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --cold:#5aaef5; --warm:#c49a5c; --reuse:#3fd1b3;
+  --sky:#091216; --ground:#1c2620; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0b1317; --surface:#121d22; --ink:#e2edf2; --muted:#92a6b0; --line:#22343c;
+  --accent:#4cb4ec; --accent-ink:#04131c;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --cold:#5aaef5; --warm:#c49a5c; --reuse:#3fd1b3;
+  --sky:#091216; --ground:#1c2620; color-scheme:dark }
+
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:18px}
+header{display:grid;gap:6px;max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.4vw,44px);line-height:1.06;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:0;font-size:17px}
+
+.stage{position:relative;height:clamp(460px,66vh,700px);border-radius:18px;overflow:hidden;background:var(--sky);border:1px solid var(--line);touch-action:none}
+.stage canvas{display:block;width:100%;height:100%;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;white-space:nowrap;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:5px 9px 5px 8px;font-size:12.5px;line-height:1.25;box-shadow:0 4px 14px rgba(0,0,0,.12);opacity:0;transition:opacity .45s;display:flex;gap:7px;align-items:center}
+.lbl.on{opacity:1}
+.lbl i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c,var(--read))}
+.lbl b{font-weight:700}
+.lbl span{color:var(--muted)}
+.lbl em{font-style:normal;font-weight:700;color:var(--c,var(--read));font-variant-numeric:tabular-nums}
+.lbl::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+
+.hud{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:grid;gap:2px;min-width:190px;box-shadow:0 6px 18px rgba(0,0,0,.1)}
+.hud .sc{font-size:12px;color:var(--muted)}
+.hud .mv{font-family:var(--font-display);font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.hud .ml{font-size:12px;color:var(--muted)}
+.hud .cf{font-size:12px;color:var(--ok);font-weight:700}
+.chip{justify-self:start;margin-top:4px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--sev) 16%,transparent);color:var(--sev)}
+.think{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:12px;width:min(320px,calc(100% - 24px));background:var(--surface);border:1px solid var(--ai);border-radius:14px;padding:12px 14px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.12);opacity:0;transform:translateY(-6px);transition:opacity .4s,transform .4s;pointer-events:none}
+.think.on{opacity:1;transform:none}
+.think .h{font-weight:700;color:var(--ai);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.think ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.think li{display:grid;grid-template-columns:18px 1fr auto;gap:6px;align-items:start;font-size:13px}
+.think li .m{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px}
+.think li.y .m{background:var(--ok)}
+.think li.n .m{background:var(--muted)}
+.think li.n{color:var(--muted)}
+.think li .s{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ok)}
+.think li.n .s{color:var(--muted);font-weight:400}
+.legend{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;right:12px;display:flex;gap:6px 12px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 24px);background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:12px}
+.legend span{display:flex;gap:6px;align-items:center}
+.legend i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.legend i.p{border-radius:2px;height:5px;width:14px}
+.parts-btn{all:unset;cursor:pointer;position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;display:flex;gap:7px;align-items:center}
+.parts-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.parts-btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.rail{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
+.step{all:unset;cursor:pointer;position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.step:focus-visible,.ctl:focus-visible,.scen button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.step .n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.step .t{font-family:var(--font-display);font-weight:800;font-size:16px}
+.step .bar{position:absolute;left:0;bottom:0;height:3px;width:calc(var(--p,0)*100%);background:var(--accent)}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ctrls{display:flex;gap:8px}
+.ctl{all:unset;cursor:pointer;display:grid;place-items:center;width:52px;min-height:52px;border-radius:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-sizing:border-box}
+.ctl:hover{border-color:var(--accent)}
+.ctl svg{width:20px;height:20px}
+.ctl.next{width:auto;padding:0 16px;grid-auto-flow:column;gap:6px;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0}
+
+.below{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px}
+.caption{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:grid;gap:8px;align-content:start}
+.caption h2{font-family:var(--font-display);font-size:24px;line-height:1.15;margin:0;text-wrap:balance}
+.caption p{margin:0;max-width:62ch}
+.caption .ex{border-top:1px dashed var(--line);padding-top:10px}
+.caption .ex b{color:var(--accent)}
+.side{display:grid;gap:10px;align-content:start}
+.side h3{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.scen{display:grid;gap:8px}
+.scen button{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.scen button .d{grid-row:span 2;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.scen button b{font-weight:700}
+.scen button small{color:var(--muted);font-size:13px;grid-column:2}
+.scen button .sv{grid-row:1/span 2;grid-column:3;font-weight:700;color:var(--ok);font-size:13px;font-variant-numeric:tabular-nums}
+.scen button[aria-pressed="true"]{border-color:var(--accent)}
+.scen button[aria-pressed="true"] .d{background:var(--accent)}
+
+.sec{display:grid;gap:12px;margin-top:10px}
+.sec h2{font-family:var(--font-display);font-size:22px;margin:0}
+.sec .sub{margin:0;color:var(--muted);max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.part{border-top:3px solid var(--c);background:var(--surface);border-radius:4px 4px 14px 14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.part b{font-family:var(--font-display);font-size:17px}
+.part p{margin:0;color:var(--muted);font-size:14.5px}
+.part ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.lever{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.lever b{font-family:var(--font-display);font-size:16.5px}
+.lever p{margin:0;color:var(--muted);font-size:14.5px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.fallback{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+@media (max-width:760px){
+  .rail{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .ctrls{grid-column:1/-1}
+  .ctrls>button{flex:1;min-height:44px}
+  .step{padding:8px 6px;text-align:center}
+  .step .t{font-size:13px}
+  .below{grid-template-columns:minmax(0,1fr)}
+  .stage{height:520px}
+  .hud{min-width:0;padding:8px 11px}
+  .hud .mv{font-size:22px}
+  .legend{font-size:11px;gap:4px 8px;bottom:52px}
+  .lbl{font-size:11px;padding:4px 7px}
+  .lbl span{display:none}
+  .think{top:auto;bottom:52px}
+}
+@media (prefers-reduced-motion: reduce){.lbl,.think{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Smart Water</div>
+    <h1>From river to tap and back again, with AI keeping it clean and cheap</h1>
+    <p class="lede">A town’s whole water cycle: the plant that cleans river water, the pipes that bring it to homes, the sewers that take it away, and the plant that treats waste water for reuse. Follow one problem from start to finish. Drag to turn the 3D view.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of a river, a water treatment plant, an overhead tank, a town, a sewage treatment plant and a park using treated water, with animated data moving to a cloud AI"></canvas>
+    <div class="overlay" id="overlay"></div>
+    <div class="hud" aria-live="polite">
+      <div class="sc" id="hudScen"></div>
+      <div class="mv" id="hudVal"></div>
+      <div class="ml" id="hudLbl"></div>
+      <div class="chip" id="hudChip"></div>
+      <div class="cf" id="hudNote"></div>
+    </div>
+    <div class="think" id="think"></div>
+    <div class="legend" aria-label="Colours">
+      <span style="--c:var(--read)"><i></i>Readings</span>
+      <span style="--c:var(--cmd)"><i></i>Instructions</span>
+      <span style="--c:var(--msg)"><i></i>Messages</span>
+      <span style="--c:var(--cold)"><i class="p"></i>Clean water</span>
+      <span style="--c:var(--warm)"><i class="p"></i>Waste water</span>
+      <span style="--c:var(--reuse)"><i class="p"></i>Treated for reuse</span>
+    </div>
+    <button class="parts-btn" id="partsBtn" aria-pressed="false">Label all parts</button>
+  </div>
+
+  <nav class="rail" aria-label="Steps">
+    <button class="step" data-i="0"><span class="n">Step 1</span><span class="t">Sense</span><span class="bar"></span></button>
+    <button class="step" data-i="1"><span class="n">Step 2</span><span class="t">Send</span><span class="bar"></span></button>
+    <button class="step" data-i="2"><span class="n">Step 3</span><span class="t">Think</span><span class="bar"></span></button>
+    <button class="step" data-i="3"><span class="n">Step 4</span><span class="t">Act</span><span class="bar"></span></button>
+    <button class="step" data-i="4"><span class="n">Step 5</span><span class="t">Tell you</span><span class="bar"></span></button>
+    <div class="ctrls">
+      <button class="ctl" id="repeat" aria-label="Repeat this step" title="Repeat this step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+      <button class="ctl" id="play" aria-label="Pause" title="Play / pause"></button>
+      <button class="ctl next" id="next" aria-label="Next step">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </nav>
+
+  <section class="below">
+    <article class="caption" aria-live="polite">
+      <h2 id="capT"></h2>
+      <p id="capD"></p>
+      <p class="ex" id="capX"></p>
+    </article>
+    <aside class="side">
+      <h3>Pick a problem</h3>
+      <div class="scen" id="scen"></div>
+    </aside>
+  </section>
+
+  <section class="sec">
+    <h2>Cleaning water for the town</h2>
+    <div class="grid">
+      <div class="part" style="--c:var(--cold)"><b>River intake and pumps</b><p>Draw raw water from the river. A sensor checks how muddy it is (turbidity).</p></div>
+      <div class="part" style="--c:var(--cold)"><b>Mixing and clarifier</b><p>A chemical called alum makes dirt clump together. In the big round tank the clumps sink to the bottom.</p></div>
+      <div class="part" style="--c:var(--cold)"><b>Sand filters</b><p>Catch the fine dirt left over. They are washed backwards (backwash) when they clog.</p></div>
+      <div class="part" style="--c:var(--cold)"><b>Chlorine and storage</b><p>A small dose of chlorine kills germs. Clean water is stored and pumped up to the overhead tank.</p></div>
+      <div class="part" style="--c:var(--cold)"><b>Pipes and meters</b><p>Carry water to every home. Flow and pressure meters in each ward show where water goes and where it leaks.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Treating waste water</h2>
+    <div class="grid">
+      <div class="part" style="--c:var(--warm)"><b>Sewers and screens</b><p>Carry used water from homes to the sewage plant. Screens remove plastic, rags and grit.</p></div>
+      <div class="part" style="--c:var(--warm)"><b>Aeration tank and blowers</b><p>Blowers bubble air through the water so good bacteria can eat the dirt. They use about half the plant’s electricity.</p></div>
+      <div class="part" style="--c:var(--warm)"><b>Settling tank and sludge</b><p>The bacteria settle out as sludge. Sludge goes to a digester that makes biogas.</p></div>
+      <div class="part" style="--c:var(--reuse)"><b>Treated water reuse</b><p>Clean enough water goes to parks, farms and industry instead of wasting fresh water. The rest returns safely to the river.</p></div>
+      <div class="part" style="--c:var(--read)"><b>Control room and cloud AI</b><p>The SCADA system collects every reading on site. The cloud AI learns how the whole cycle behaves and suggests or makes the best settings.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Six ways the AI helps</h2>
+    <div class="grid">
+      <div class="lever"><b>Right chemical dose</b><p>Alum and chlorine follow the river’s quality minute by minute, so water stays safe without wasting chemicals.</p></div>
+      <div class="lever"><b>Cheaper aeration</b><p>Blowers give the bacteria exactly the air they need, often saving a quarter of the plant’s power.</p></div>
+      <div class="lever"><b>Find leaks from night flow</b><p>At night almost nobody uses water, so extra flow means a leak. The AI points to the ward and lane.</p></div>
+      <div class="lever"><b>Pump when power is cheap</b><p>It predicts tomorrow’s demand and fills tanks during off-peak hours.</p></div>
+      <div class="lever"><b>Warn before limits are crossed</b><p>Outlet quality trends are watched so staff can act before a pollution limit is broken.</p></div>
+      <div class="lever"><b>Fix pumps before they fail</b><p>Vibration, heat and current show early wear, so repairs are planned, not emergencies.</p></div>
+    </div>
+    <p class="note">All numbers in this demo are examples for a town of about 30,000 people, with power at ₹9 per kWh.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $ = (s) => document.querySelector(s);
+const stage = $('#stage'), overlay = $('#overlay'), canvas = $('#c');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- story ---------- */
+const STEPS = [
+  { t:'Sensors check the water at every stage', d:'Sensors measure how muddy the river is, how much chlorine is in the drinking water, tank levels, flow and pressure in the pipes, oxygen in the sewage tanks and the quality of the water leaving the plant.' },
+  { t:'The control room sends it all to the cloud', d:'The SCADA computer collects readings from both plants and the pipe network and sends them every minute. The plants keep running safely even if the internet drops.' },
+  { t:'The AI compares readings with what is safe and efficient', d:'It knows the safe limits and what normal looks like for each hour of the day. When something drifts, it finds the cause and weighs the options.' },
+  { t:'Pumps, valves and people act on the decision', d:'Some changes are automatic, like a dosing pump or blower speed. Others go to the right person with the exact place to look.' },
+  { t:'Operators and officials see what happened', d:'The plant operator and the municipal engineer get a short message with the problem, the fix and the result. They can ask questions in plain words.' },
+];
+const SCEN = {
+  muddy: { name:'Muddy river after rain', time:'6:10 AM', blurb:'Drinking water getting cloudy', sensor:'raw',
+    metric:{ label:'Drinking water turbidity', from:2.8, to:0.6, unit:' NTU', dec:1 }, note:'Safe limit: below 1 NTU',
+    sense:'After heavy rain the river turns muddy. Raw water jumps from 18 to <b>240 NTU</b>, and the drinking water is creeping up to <b>2.8 NTU</b>. It must stay below 1.',
+    think:'Muddier water needs more alum to make the dirt clump and sink. Too little lets dirt through; too much wastes chemicals.',
+    options:[['Raise the alum dose from 18 to 42 mg/L','matched to the river',1],['Backwash the filters 2 hours early','keeps them clean',1],['Stop the plant until the river clears','town runs dry',0]],
+    act:'alum', actLbl:'Alum dose 18 → 42 mg/L',
+    actX:'The dosing pump adds more alum, the dirt settles in the clarifier and the filters are washed early. Drinking water drops to <b>0.6 NTU</b>.',
+    phone:{ title:'Muddy river handled', body:'Raw water hit 240 NTU after rain. Alum raised and filters washed. Drinking water at 0.6 NTU.' },
+    status:['Unsafe trend','Adjusting…','Safe'] },
+  air: { name:'Over-aeration', time:'2:00 PM', blurb:'Sewage plant blowers working too hard', sensor:'do',
+    metric:{ label:'Blower power', from:85, to:58, unit:' kW' }, note:'Outlet BOD 12 mg/L · limit 30',
+    sense:'Oxygen in the aeration tank is <b>3.6 mg/L</b>. The bacteria only need about 2, so the blowers are wasting power.',
+    think:'Blowers use about half of the sewage plant’s electricity. Matching air to the real load saves energy without hurting treatment.',
+    options:[['Slow the blowers to hold oxygen at 2 mg/L','−27 kW',1],['Check outlet quality every 15 minutes','safety check',1],['Switch a blower off completely','smell, poor treatment',0]],
+    act:'blower', actLbl:'Blowers 100 % → 68 %',
+    actX:'The blowers slow down until oxygen sits at 2 mg/L. The outlet stays within limits and blower power falls from 85 to <b>58 kW</b>, about ₹240 saved every hour.',
+    phone:{ title:'Aeration tuned', body:'Oxygen was 3.6 mg/L, more than needed. Blowers slowed. Saving 27 kW, about ₹240 an hour.' },
+    status:['Wasting power','Adjusting…','Saving 27 kW'] },
+  leak: { name:'Hidden leak at night', time:'2:30 AM', blurb:'Night flow too high in Ward 3', sensor:'flow',
+    metric:{ label:'Water lost per hour', from:22, to:2, unit:' m³' }, note:'Ward 3 · 1,840 homes',
+    sense:'At 2:30 AM, when almost everyone is asleep, flow into Ward 3 is <b>22 m³ an hour</b> above normal, and pressure is dropping near Lane 7.',
+    think:'High night flow plus a pressure dip at one spot points to a burst pipe, not people using water.',
+    options:[['Send the crew to Lane 7 with a map pin','exact spot',1],['Lower pressure in Ward 3 until repaired','less water lost',1],['Wait for complaints in the morning','~150 m³ lost',0]],
+    act:'crew', actLbl:'Crew to Lane 7 · pressure lowered',
+    actX:'Pressure in Ward 3 is lowered and the crew finds the burst at Lane 7. Loss falls from 22 to <b>2 m³ an hour</b>.',
+    phone:{ title:'Leak found in Ward 3', body:'Burst pipe at Lane 7 found from night-flow data at 2:30 AM. Crew repairing. 20 m³ an hour saved.' },
+    status:['Losing water','Repairing…','Fixed'] },
+};
+const ORDER = ['muddy','air','leak'];
+const DUR = 7;
+const fmt = (m, v) => (m.dec ? v.toFixed(m.dec) : Math.round(v)) + m.unit;
+
+/* ---------- WebGL ---------- */
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias:true }); }
+catch(e){ stage.insertAdjacentHTML('beforeend','<div class="fallback">This browser could not start the 3D view. The steps below still explain each stage.</div>'); }
+if (!renderer) return;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
+const flows = [], labels = [];
+const V = (x,y,z) => new THREE.Vector3(x,y,z);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.enablePan = false;
+controls.minDistance = 20; controls.maxDistance = 140; controls.maxPolarAngle = 1.48;
+controls.target.set(3, 2, -4);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a9a7a, 0.75); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 0.95);
+sun.position.set(20, 40, 24); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-42, right:42, top:42, bottom:-42, near:1, far:130 });
+scene.add(sun);
+
+const std = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness:0.8, metalness:0.05 }, o));
+const mesh = (geo, mat, x=0, y=0, z=0, parent=scene) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+const sphere = new THREE.SphereGeometry(1, 14, 10);
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.35,'rgba(255,255,255,.8)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+function particles(n, color, size, spawn) {
+  const geo = new THREE.BufferGeometry(); const pos = new Float32Array(n*3);
+  for (let i = 0; i < n; i++) spawn(pos, i, true);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color, size, map:dotTex, transparent:true, opacity:0, depthWrite:false });
+  const p = new THREE.Points(geo, mat); scene.add(p); return { p, pos, n, spawn };
+}
+const flat = (w, d, mat, x, z, y = 0.02) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat); m.rotation.x = -Math.PI/2; m.position.set(x, y, z); m.receiveShadow = true; scene.add(m); return m; };
+const tank = (r, h, x, z, wall, waterMat) => { mesh(new THREE.CylinderGeometry(r, r, h, 36, 1, true), std(wall, { side:THREE.DoubleSide }), x, h/2, z);
+  const w = new THREE.Mesh(new THREE.CircleGeometry(r - 0.08, 36), waterMat); w.rotation.x = -Math.PI/2; w.position.set(x, h - 0.15, z); scene.add(w); return w; };
+const pad = (w, d, x, z) => mesh(new THREE.BoxGeometry(w, 0.2, d), std(0xc9cbc6, { roughness:1 }), x, 0.1, z);
+
+/* ground, river, roads */
+const groundMat = std(0x8fa27a, { roughness:1 });
+const ground = new THREE.Mesh(new THREE.CircleGeometry(140, 48), groundMat); ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+const riverMat = std(0x3f86b0, { roughness:0.25, metalness:0.2 });
+const river = flat(110, 7, riverMat, 0, -21, 0.03);
+flat(110, 1, std(0xb8a98c, { roughness:1 }), 0, -17, 0.025); flat(110, 1, std(0xb8a98c, { roughness:1 }), 0, -25, 0.025);
+const roadMat = std(0xb7ae98, { roughness:1 });
+flat(70, 2.2, roadMat, 0, -4, 0.03); flat(2.2, 26, roadMat, 4, 6, 0.03);
+
+/* ---------- water treatment plant (WTP) ---------- */
+pad(22, 14, -21, -8);
+const cleanWater = std(0x5aaee0, { roughness:0.2, metalness:0.1 });
+const muddyCol = new THREE.Color(0x8a6b45), clearCol = new THREE.Color(0x5aaee0), riverCol = new THREE.Color(0x3f86b0);
+// intake + pump house on the bank
+mesh(new THREE.BoxGeometry(3, 2.4, 2.4), std(0xd9dcd6), -27, 1.2, -15);
+mesh(new THREE.BoxGeometry(3.3, 0.2, 2.7), std(0x4a6a7a), -27, 2.5, -15);
+// mixing tank + clarifier
+const clarMat = std(0x8a6b45, { roughness:0.25 });
+tank(1.2, 1.6, -24, -9, 0xd2d6d0, std(0x7a6040));
+const clarWater = tank(3.2, 1.6, -19, -9, 0xd2d6d0, clarMat);
+const bridge = mesh(new THREE.BoxGeometry(6.4, 0.12, 0.4), std(0x8a949a, { metalness:0.5 }), -19, 1.75, -9);
+// sand filters
+for (let i = 0; i < 3; i++) { mesh(new THREE.BoxGeometry(2.4, 1.4, 3), std(0xd2d6d0), -13 + i * 2.7, 0.8, -10);
+  flat(2.1, 2.7, std(0xd8c392, { roughness:1 }), -13 + i * 2.7, -10, 1.45); }
+// chlorine + alum dosing house
+mesh(new THREE.BoxGeometry(3, 2.2, 2.4), std(0xeef0ec), -24, 1.2, -3.5);
+mesh(new THREE.BoxGeometry(3.2, 0.2, 2.6), std(0x4a6a7a), -24, 2.4, -3.5);
+const alumPump = mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.7, 12), std(0x2f6fb3), -22.1, 0.55, -2.4);
+const alumLed = mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshBasicMaterial({ color:0x3fd17a }), -22.1, 1, -2.4);
+mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.4, 14), std(0xf2f2ea), -25.6, 0.9, -2.2);
+// clear water reservoir
+mesh(new THREE.BoxGeometry(5, 1.2, 3.4), std(0xc8ccc5), -13, 0.6, -3.5);
+// overhead tank near the town
+const OHT = V(-3, 0, 4);
+for (const [dx, dz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) mesh(new THREE.CylinderGeometry(0.13, 0.16, 6.4, 8), std(0xb8b2a6), OHT.x + dx, 3.2, OHT.z + dz);
+mesh(new THREE.CylinderGeometry(1.9, 1.9, 2.4, 24), std(0xdbe2e6), OHT.x, 7.6, OHT.z);
+mesh(new THREE.ConeGeometry(2, 0.7, 24), std(0x2f6f9c), OHT.x, 9.15, OHT.z);
+
+/* ---------- town ---------- */
+const roofs = [0xb5523b, 0x8f6a4a, 0x5f7d8c, 0xa3563f], walls = [0xf1e6d2, 0xe8d8bd, 0xf5efe3, 0xdcc9a7];
+const HOUSES = [];
+for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) {
+  const x = 0 + c * 3.4 + (r % 2) * 1.2, z = 8 + r * 3.4, k = (r + c) % 4;
+  const g = new THREE.Group(); g.position.set(x + 1.5, 0, z); scene.add(g);
+  mesh(new THREE.BoxGeometry(2.2, 1.7, 2), std(walls[k]), 0, 0.85, 0, g);
+  const rf = mesh(new THREE.ConeGeometry(1.85, 1.1, 4), std(roofs[k]), 0, 2.25, 0, g); rf.rotation.y = Math.PI/4;
+  HOUSES.push(g);
+}
+mesh(new THREE.BoxGeometry(5, 4.5, 4), std(0xe4e7ea), 13, 2.25, 10.5);
+mesh(new THREE.BoxGeometry(5.2, 0.2, 4.2), std(0x4a5560), 13, 4.6, 10.5);
+// ward meter chamber
+mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.4, 16), std(0x50585e), 3, 0.2, 6.2);
+const leak = particles(80, 0x6fbcf0, 0.35, (a, i, init) => { a[i*3] = 9.5 + (Math.random()-0.5) * 0.3; a[i*3+1] = 0.2 + (init ? Math.random() * 1.5 : 0); a[i*3+2] = 13.6 + (Math.random()-0.5) * 0.3; });
+flat(2.2, 1.6, std(0x5d7a8f, { roughness:0.2 }), 9.5, 13.6, 0.04);
+
+/* ---------- sewage treatment plant (STP) ---------- */
+pad(20, 14, 25, -6);
+const wasteMat = std(0x7a6040, { roughness:0.3 });
+mesh(new THREE.BoxGeometry(2, 1.2, 4), std(0xd2d6d0), 16.8, 0.6, -2);  // screen chamber
+const screenBars = mesh(new THREE.BoxGeometry(0.1, 1, 3.6), std(0x555c60, { metalness:0.6 }), 16.8, 1.1, -2);
+// aeration tank
+mesh(new THREE.BoxGeometry(8, 1.6, 4.4), std(0xd2d6d0), 22.5, 0.8, -2);
+const aerWater = flat(7.6, 4, std(0x8a7a52, { roughness:0.3 }), 22.5, -2, 1.5);
+const bubbles = particles(220, 0xf3f0e0, 0.35, (a, i, init) => { a[i*3] = 18.9 + Math.random() * 7.2; a[i*3+1] = 1.5 + (init ? Math.random() * 0.4 : 0); a[i*3+2] = -2 + (Math.random()-0.5) * 3.8; });
+bubbles.p.material.opacity = 0.8;
+// blower house
+mesh(new THREE.BoxGeometry(3.4, 2.2, 2.6), std(0xeef0ec), 20, 1.1, -7);
+mesh(new THREE.BoxGeometry(3.6, 0.2, 2.8), std(0x6a5a3a), 20, 2.3, -7);
+const blowerFan = new THREE.Group(); blowerFan.position.set(21.75, 1.2, -7); scene.add(blowerFan);
+mesh(new THREE.TorusGeometry(0.55, 0.06, 6, 20), std(0x3b4248), 21.75, 1.2, -7).rotation.y = Math.PI/2;
+for (let k = 0; k < 4; k++) { const b = mesh(new THREE.BoxGeometry(0.04, 0.9, 0.2), std(0x8c979e, { metalness:0.6 }), 0, 0, 0, blowerFan); b.rotation.x = k * Math.PI / 4 * 2; }
+// secondary clarifier
+tank(2.8, 1.5, 30, -2, 0xd2d6d0, std(0x6b98a8, { roughness:0.25 }));
+mesh(new THREE.BoxGeometry(5.6, 0.12, 0.35), std(0x8a949a, { metalness:0.5 }), 30, 1.65, -2);
+// sludge digester (biogas)
+mesh(new THREE.CylinderGeometry(2, 2, 2.4, 24), std(0xb8bdb4), 27.5, 1.2, -10);
+mesh(new THREE.SphereGeometry(2, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), std(0x8aa04f), 27.5, 2.4, -10);
+// outlet analyser hut
+mesh(new THREE.BoxGeometry(1.4, 1.6, 1.2), std(0xf2f4f5), 33.5, 0.8, 1.2);
+// reuse park with sprinklers
+flat(12, 8, std(0x5f9c4a, { roughness:1 }), 30, 10, 0.03);
+for (const [x, z] of [[26,8],[30,12],[34,8],[28,11],[33,12]]) { mesh(new THREE.CylinderGeometry(0.12, 0.16, 1, 6), std(0x6b4f35), x, 0.5, z);
+  mesh(sphere, std(0x3f7a35), x, 1.5, z).scale.set(0.9, 0.8, 0.9); }
+const spray = particles(80, 0x8be0cf, 0.3, (a, i, init) => { const ang = Math.random() * 6.28, r = Math.random() * 2; a[i*3] = 30 + Math.cos(ang) * r; a[i*3+1] = 0.3 + (init ? Math.random() * 0.9 : 0); a[i*3+2] = 9 + Math.sin(ang) * r; });
+spray.p.material.opacity = 0.6;
+
+/* control room + gateway */
+const CR = V(5, 0, -9);
+mesh(new THREE.BoxGeometry(5, 3, 3.4), std(0xeef0f1), CR.x, 1.5, CR.z);
+mesh(new THREE.BoxGeometry(5.3, 0.25, 3.7), std(0x2f5f7c), CR.x, 3.1, CR.z);
+mesh(new THREE.BoxGeometry(1.6, 0.9, 0.05), std(0x5f7d8c), CR.x - 1, 1.8, CR.z + 1.72);
+const GW = V(CR.x + 1.6, 5, CR.z - 0.4);
+mesh(new THREE.CylinderGeometry(0.04, 0.04, 2, 6), std(0x30373d), GW.x, 4.2, GW.z);
+mesh(new THREE.BoxGeometry(0.6, 0.5, 0.35), std(0xf2f4f5), GW.x, 5, GW.z);
+const gwLed = mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshBasicMaterial({ color:0x26c2ff }), GW.x, 5.15, GW.z + 0.2);
+
+/* pipes (visible) */
+const tube = (pts, color, r = 0.14) => { mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'centripetal'), 120, r, 8), std(color, { metalness:0.3, roughness:0.5 })); return pts; };
+const P_RAW = tube([V(-27, 0.3, -18.5), V(-27, 0.3, -13.6), V(-24, 0.3, -11), V(-24, 0.3, -9)], 0x3b6f9c);
+const P_CLEAN = tube([V(-13, 0.3, -3.5), V(-8, 0.3, -2.5), V(-3, 0.3, 1), V(-3, 0.3, 3.5), V(-2, 0.3, 6), V(14, 0.3, 6), V(14, 0.3, 15)], 0x3b6f9c);
+const P_SEWER = tube([V(1, 0.25, 16.5), V(14, 0.25, 16.5), V(16, 0.25, 12), V(16.8, 0.25, 4), V(16.8, 0.25, 0)], 0x6b5636, 0.18);
+const P_REUSE = tube([V(32.8, 0.3, -2), V(33, 0.3, 4), V(30, 0.3, 8), V(30, 0.3, 9)], 0x1f8a75);
+const P_OUT = tube([V(32.8, 0.3, -3), V(36, 0.3, -10), V(36, 0.3, -17.5)], 0x1f8a75);
+
+/* cloud + AI core */
+const CLOUD = V(2, 17, -16), CROT = 0.2;
+const cloud = new THREE.Group(); cloud.position.copy(CLOUD); cloud.rotation.y = CROT; scene.add(cloud);
+const cloudMat = new THREE.MeshStandardMaterial({ color:0xffffff, roughness:1, transparent:true, opacity:0.93 });
+[[0,0,0,2.5],[-2.5,-0.4,0.3,1.9],[2.6,-0.3,-0.2,2],[-1.2,1.1,-0.5,1.8],[1.3,1.2,0.3,1.6],[4.2,-0.6,0.3,1.3],[-4.2,-0.7,0,1.3]].forEach(([x,y,z,r]) => {
+  const m = new THREE.Mesh(sphere, cloudMat); m.position.set(x,y,z+1.2); m.scale.setScalar(r); cloud.add(m); });
+const coreMat = new THREE.MeshBasicMaterial({ color:0x6a55e6 });
+const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 1), new THREE.MeshBasicMaterial({ color:0x6a55e6, wireframe:true })); core.position.set(0, 0.2, 4); cloud.add(core);
+const coreIn = new THREE.Mesh(new THREE.IcosahedronGeometry(0.62, 0), coreMat); coreIn.position.copy(core.position); cloud.add(coreIn);
+const rings = [0,1,2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.04, 6, 48), new THREE.MeshBasicMaterial({ color:0x6a55e6, transparent:true, opacity:0 })); r.position.copy(core.position); cloud.add(r); return r; });
+const CORE = CLOUD.clone().add(V(4 * Math.sin(CROT), 0.2, 4 * Math.cos(CROT)));
+
+/* phone */
+const PHONE = V(27, 12, -16);
+const phone = new THREE.Group(); phone.position.copy(PHONE); scene.add(phone);
+mesh(new THREE.BoxGeometry(2.7, 5.2, 0.24), std(0x1b1f24, { roughness:0.3, metalness:0.3 }), 0, 0, 0, phone);
+const phoneCv = document.createElement('canvas'); phoneCv.width = 360; phoneCv.height = 720;
+const phoneTex = new THREE.CanvasTexture(phoneCv);
+const pscreen = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 5), new THREE.MeshBasicMaterial({ map:phoneTex })); pscreen.position.z = 0.13; phone.add(pscreen);
+phone.traverse(o => { o.castShadow = false; });
+
+/* technician (leak crew) */
+const tech = new THREE.Group(); scene.add(tech);
+mesh(new THREE.CylinderGeometry(0.22, 0.25, 1, 10), std(0xf28c28), 0, 0.65, 0, tech);
+mesh(sphere, std(0xe0b48f), 0, 1.35, 0, tech).scale.setScalar(0.18);
+mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.1, 12), std(0xf6d32d), 0, 1.5, 0, tech);
+
+/* ---------- sensors ---------- */
+const SENS = {
+  raw:   { pos:V(-27, 2.9, -15), name:'Raw water sensor', what:'River turbidity' },
+  cl:    { pos:V(-13, 1.6, -3.5), name:'Drinking water sensor', what:'Chlorine · turbidity' },
+  tank:  { pos:V(-3, 9.6, 4), name:'Tank level', what:'Overhead tank' },
+  flow:  { pos:V(3, 0.7, 6.2), name:'Ward 3 meter', what:'Flow · pressure' },
+  do:    { pos:V(24, 1.9, -0.3), name:'Oxygen probe', what:'Aeration tank' },
+  out:   { pos:V(33.5, 1.9, 1.2), name:'Outlet analyser', what:'BOD · COD · TSS' },
+};
+for (const k in SENS) { const s = SENS[k];
+  if (k === 'do') mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), std(0x30373d), s.pos.x, 1.6, s.pos.z);
+  s.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0x0f9bd7, transparent:true, opacity:0.85, depthWrite:false }));
+  s.glow.position.copy(s.pos).add(V(0, 0.3, 0)); s.glow.scale.setScalar(0.65); scene.add(s.glow); }
+
+/* ---------- flows ---------- */
+class Flow {
+  constructor(pts, kind, n = 4, speed = 0.32, size = 0.2, line = true) {
+    this.curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    this.kind = kind; this.speed = speed; this.on = 0; this.target = 0; this.off = Math.random(); this.rate = 1;
+    this.lineMat = new THREE.LineDashedMaterial({ color:0xffffff, dashSize:0.35, gapSize:0.28, transparent:true, opacity:0, depthWrite:false });
+    this.line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(this.curve.getPoints(100)), this.lineMat);
+    this.line.computeLineDistances(); this.hasLine = line; if (line) scene.add(this.line);
+    this.dots = [];
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 8), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0 }));
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0xffffff, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }));
+      g.scale.setScalar(size * 5); m.add(g); scene.add(m); this.dots.push({ m, g });
+    }
+    flows.push(this);
+  }
+  color(c) { this.lineMat.color.set(c); this.dots.forEach(d => { d.m.material.color.set(c); d.g.material.color.set(c); }); }
+  update(dt) {
+    this.on += (this.target - this.on) * Math.min(1, dt * 3.5);
+    if (!reduce) this.off = (this.off + dt * this.speed * this.rate) % 1;
+    const vis = this.on > 0.01;
+    this.line.visible = vis && this.hasLine; this.lineMat.opacity = this.on * 0.6;
+    this.dots.forEach((d, i) => { d.m.visible = vis; if (!vis) return;
+      const t = (this.off + i / this.dots.length) % 1; d.m.position.copy(this.curve.getPointAt(t));
+      const edge = Math.min(1, t * 8, (1 - t) * 8); d.m.material.opacity = this.on * edge; d.g.material.opacity = this.on * edge * 0.55; });
+  }
+}
+const arc = (a, b, h) => [a.clone(), V(a.x, a.y + 1.5, a.z), V((a.x + b.x) / 2, Math.max(a.y, b.y) + h, (a.z + b.z) / 2), b.clone()];
+const F = { sense:{} };
+for (const k in SENS) F.sense[k] = new Flow(arc(SENS[k].pos, GW, 5), 'read', 3, 0.3, 0.17);
+F.send = new Flow([GW.clone(), V(8, 13, -12), CORE.clone().add(V(0.3, 0.4, 0))], 'read', 5, 0.3, 0.27);
+F.cmd  = new Flow([CORE.clone().add(V(0.7, -0.7, 0.4)), V(10, 12, -8), GW.clone().add(V(0.3, 0.3, 0.3))], 'cmd', 5, 0.3, 0.27);
+const TARGET = { alum:V(-22.1, 1.3, -2.4), blower:V(20, 2.6, -7), crew:V(9.5, 1, 13.6) };
+F.act = {}; for (const k in TARGET) F.act[k] = new Flow(arc(GW, TARGET[k], 6), 'cmd', 4, 0.32, 0.19);
+F.tell = new Flow([CORE.clone().add(V(0.5, 0.3, 0.3)), V(15, 21, -16), PHONE.clone().add(V(-0.8, 0.8, 0))], 'msg', 4, 0.33, 0.27);
+F.ask  = new Flow([PHONE.clone().add(V(0, 2.9, 0)), V(13, 24, -17), CORE.clone().add(V(0, 1.1, 0))], 'msg', 2, 0.25, 0.17);
+/* physical water flows */
+F.w = [
+  new Flow(P_RAW, 'clean', 5, 0.18, 0.13, false),
+  new Flow([V(-24, 1.4, -9), V(-19, 1.6, -9), V(-13, 1.5, -10), V(-8, 1.5, -10), V(-13, 1.3, -3.5)], 'clean', 8, 0.12, 0.13, false),
+  new Flow(P_CLEAN, 'clean', 14, 0.1, 0.13, false),
+  new Flow(P_SEWER, 'waste', 10, 0.12, 0.14, false),
+  new Flow([V(16.8, 1.3, -2), V(22.5, 1.6, -2), V(30, 1.6, -2), V(32.8, 0.6, -2.5)], 'waste', 8, 0.12, 0.13, false),
+  new Flow(P_REUSE, 'reuse', 6, 0.16, 0.13, false),
+  new Flow(P_OUT, 'reuse', 6, 0.14, 0.13, false),
+];
+
+/* ---------- labels ---------- */
+function addLabel(pos, html, color) {
+  const el = document.createElement('div'); el.className = 'lbl'; el.style.setProperty('--c', color); el.innerHTML = html; overlay.appendChild(el);
+  const L = { el, pos, on:false }; labels.push(L); return L;
+}
+for (const k in SENS) { const s = SENS[k]; s.label = addLabel(s.pos.clone().add(V(0, 0.75, 0)), `<i></i><b>${s.name}</b><span>${s.what}</span>`, 'var(--read)'); }
+const part = (pos, name, what, c = 'var(--accent)') => addLabel(pos, `<i></i><b>${name}</b><span>${what}</span>`, c);
+const LB = {
+  gw: part(GW.clone().add(V(0, 0.8, 0)), 'Control room', 'SCADA · sends data out', 'var(--read)'),
+  cloud: part(CLOUD.clone().add(V(1.4, 3.1, 1.8)), 'Cloud AI', 'Keeps water safe and cheap', 'var(--ai)'),
+  phone: part(PHONE.clone().add(V(0, 3.3, 0)), 'Plant operator', 'Updates + questions', 'var(--msg)'),
+  act: addLabel(V(0, 0, 0), '', 'var(--cmd)'),
+  wtp: part(V(-19, 3.4, -9), 'Water treatment plant', 'River to drinking water', 'var(--cold)'),
+  oht: part(V(-3, 10.3, 4), 'Overhead tank', 'Stores clean water', 'var(--cold)'),
+  town: part(V(6, 4, 11), 'Town', 'Homes and offices', 'var(--cold)'),
+  stp: part(V(22.5, 3.4, -2), 'Sewage treatment plant', 'Cleans waste water', 'var(--warm)'),
+  bio: part(V(27.5, 4.9, -10), 'Biogas digester', 'Sludge to energy', 'var(--warm)'),
+  park: part(V(30, 2.6, 10.5), 'Reuse', 'Parks and farms', 'var(--reuse)'),
+  river: part(V(-6, 0.6, -21), 'River', 'Source and return', 'var(--cold)'),
+};
+const PARTS = ['wtp','oht','town','stp','bio','park','river','gw'];
+let showParts = false;
+
+/* ---------- phone ---------- */
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x+r, y); g.arcTo(x+w, y, x+w, y+h, r); g.arcTo(x+w, y+h, x, y+h, r); g.arcTo(x, y+h, x, y, r); g.arcTo(x, y, x+w, y, r); g.closePath(); }
+function wrapText(g, text, x, y, maxW, lh) { let line = ''; for (const w of text.split(' ')) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { g.fillText(line, x, y); line = w; y += lh; } else line = t; } g.fillText(line, x, y); return y; }
+function drawPhone(sc, done) {
+  const g = phoneCv.getContext('2d'), W = 360, m = sc.metric;
+  g.fillStyle = '#f2f6f8'; g.fillRect(0, 0, W, 720);
+  g.fillStyle = '#0a3550'; g.fillRect(0, 0, W, 150);
+  g.fillStyle = '#9fd3f0'; g.font = '700 20px Atkinson Hyperlegible, sans-serif'; g.fillText(sc.time, 24, 40);
+  g.fillStyle = '#ffffff'; g.font = '800 30px Outfit, sans-serif'; g.fillText('Smart Water', 24, 100);
+  g.fillStyle = '#9fd3f0'; g.font = '400 19px Atkinson Hyperlegible, sans-serif'; g.fillText('Town WTP · STP · network', 24, 130);
+  rr(g, 18, 172, W - 36, 262, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; rr(g, 38, 194, done ? 160 : 130, 34, 17); g.fill();
+  g.fillStyle = '#ffffff'; g.font = '700 18px Atkinson Hyperlegible, sans-serif'; g.fillText(done ? sc.status[2] : 'Watching', 54, 217);
+  g.fillStyle = '#132029'; g.font = '800 27px Outfit, sans-serif'; wrapText(g, done ? sc.phone.title : 'Both plants running', 38, 272, W - 76, 32);
+  g.fillStyle = '#55666f'; g.font = '400 20px Atkinson Hyperlegible, sans-serif'; wrapText(g, done ? sc.phone.body : 'The AI is watching quality, flow and power.', 38, 314, W - 76, 27);
+  rr(g, 18, 452, W - 36, 126, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = '#55666f'; g.font = '400 18px Atkinson Hyperlegible, sans-serif'; g.fillText(m.label, 38, 486);
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; g.font = '800 44px Outfit, sans-serif'; g.fillText(fmt(m, done ? m.to : m.from), 38, 546);
+  rr(g, 18, 606, W - 36, 70, 35); g.fillStyle = '#0a3550'; g.fill();
+  g.fillStyle = '#ffffff'; g.font = '400 21px Atkinson Hyperlegible, sans-serif'; g.fillText('Ask: "Is the water safe today?"', 40, 649);
+  phoneTex.needsUpdate = true;
+}
+
+/* ---------- theme ---------- */
+function applyTheme() {
+  const sky = new THREE.Color(css('--sky') || '#e3edf1');
+  scene.background = sky; scene.fog = new THREE.Fog(sky, 110, 230);
+  groundMat.color.set(css('--ground') || '#8fa27a');
+  const dark = sky.getHSL({}).l < 0.3;
+  hemi.intensity = dark ? 0.55 : 0.75; sun.intensity = dark ? 0.7 : 0.95;
+  const map = { read:css('--read'), cmd:css('--cmd'), msg:css('--msg'), clean:css('--cold'), waste:css('--warm'), reuse:css('--reuse') };
+  flows.forEach(f => f.color(map[f.kind]));
+  for (const k in SENS) SENS[k].glow.material.color.set(map.read);
+  const ai = css('--ai'); coreMat.color.set(ai); core.material.color.set(ai); rings.forEach(r => r.material.color.set(ai));
+}
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+
+/* ---------- state ---------- */
+const thinkEl = $('#think');
+const state = { step:0, t:0, scen:'muddy', playing:!reduce, a:0 };
+const clock = new THREE.Clock();
+function applyStep() {
+  const sc = SCEN[state.scen], i = state.step;
+  for (const k in F.sense) F.sense[k].target = i === 0 ? (k === sc.sensor ? 1 : 0.6) : 0;
+  F.send.target = i === 1 ? 1 : 0; F.cmd.target = i === 3 ? 1 : 0;
+  for (const k in F.act) F.act[k].target = (i === 3 && sc.act === k) ? 1 : 0;
+  F.tell.target = i === 4 ? 1 : 0; F.ask.target = i === 4 ? 0.8 : 0;
+  for (const k in SENS) SENS[k].label.on = i === 0 || (k === sc.sensor && i <= 1);
+  LB.act.pos = TARGET[sc.act].clone().add(V(0, 0.9, 0)); LB.act.el.innerHTML = `<i></i><b>${sc.actLbl}</b>`; LB.act.act = i === 3;
+  updateLabelVis();
+  drawPhone(sc, i === 4);
+  thinkEl.innerHTML = `<div class="h">Cloud AI is checking options</div><div style="margin-top:4px">${sc.think}</div><ul>${sc.options.map(o => `<li class="${o[2] ? 'y' : 'n'}"><span class="m">${o[2] ? '✓' : '×'}</span><span>${o[0]}</span><span class="s">${o[1]}</span></li>`).join('')}</ul>`;
+  thinkEl.classList.toggle('on', i === 2);
+  $('#capT').textContent = STEPS[i].t; $('#capD').textContent = STEPS[i].d;
+  const ex = [sc.sense, `The control room sends this reading, along with about 400 others from both plants and the pipes, to the cloud at <b>${sc.time}</b>.`, sc.think, sc.actX, `Message to the operator and engineer: <b>“${sc.phone.title}.”</b> ${sc.phone.body}`][i];
+  $('#capX').innerHTML = `<b>${sc.name}:</b> ` + ex;
+  document.querySelectorAll('.step').forEach((b, k) => { b.setAttribute('aria-current', k === i ? 'step' : 'false'); if (k !== i) b.style.setProperty('--p', k < i ? 1 : 0); });
+  $('#hudScen').textContent = `${sc.name} · ${sc.time}`; $('#hudLbl').textContent = sc.metric.label; $('#hudNote').textContent = sc.note;
+}
+function updateLabelVis() {
+  const i = state.step;
+  PARTS.forEach(k => LB[k].on = showParts);
+  LB.gw.on = showParts || i === 1; LB.cloud.on = showParts || i === 1 || i === 2 || i === 4; LB.phone.on = showParts || i === 4; LB.act.on = !!LB.act.act;
+}
+function setStep(i) { state.step = i; state.t = 0; applyStep(); }
+function setScen(k) { state.scen = k; state.a = 0; document.querySelectorAll('.scen button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k)); setStep(0); }
+function next() { if (state.step < 4) setStep(state.step + 1); else setScen(ORDER[(ORDER.indexOf(state.scen) + 1) % ORDER.length]); }
+
+const scenBox = $('#scen');
+const GAIN = { muddy:'Safe', air:'−27 kW', leak:'−20 m³/h' };
+ORDER.forEach(k => { const sc = SCEN[k], b = document.createElement('button'); b.dataset.k = k;
+  b.innerHTML = `<span class="d"></span><b>${sc.name}</b><span class="sv">${GAIN[k]}</span><small>${sc.blurb}</small>`; b.onclick = () => setScen(k); scenBox.appendChild(b); });
+document.querySelectorAll('.step').forEach(b => b.onclick = () => setStep(+b.dataset.i));
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+const playBtn = $('#play');
+const syncPlay = () => { playBtn.innerHTML = state.playing ? ICON_PAUSE : ICON_PLAY; playBtn.setAttribute('aria-label', state.playing ? 'Pause' : 'Play'); };
+playBtn.onclick = () => { state.playing = !state.playing; syncPlay(); }; syncPlay();
+$('#repeat').onclick = () => setStep(state.step);
+$('#next').onclick = next;
+const partsBtn = $('#partsBtn');
+partsBtn.onclick = () => { showParts = !showParts; partsBtn.setAttribute('aria-pressed', showParts); updateLabelVis(); };
+
+let placed = false;
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (!placed) { camera.position.copy(controls.target).add(V(6, 30, 40).setLength(w < 600 ? 124 : 74)); placed = true; }
+  camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+
+/* ---------- loop ---------- */
+const ease = (x) => x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2;
+const tmp = new THREE.Vector3();
+const stepBtns = document.querySelectorAll('.step');
+const techStart = V(CR.x, 0, CR.z + 2.4);
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05), T = clock.elapsedTime, sc = SCEN[state.scen];
+  state.t = Math.min(state.t + dt, DUR);
+  if (state.playing && state.t >= DUR) next();
+  const p = state.t / DUR;
+  stepBtns[state.step].style.setProperty('--p', state.playing ? p : 1);
+  const m = sc.metric;
+  const k = state.step < 3 ? 0 : state.step === 3 ? ease(Math.min(1, p * 1.3)) : 1;
+  $('#hudVal').textContent = fmt(m, m.from + (m.to - m.from) * k);
+  const si = state.step < 3 ? 0 : state.step === 3 && p < 0.75 ? 1 : 2;
+  const chip = $('#hudChip'); chip.textContent = sc.status[si]; chip.style.setProperty('--sev', si === 2 ? 'var(--ok)' : 'var(--warn)');
+
+  state.a += ((state.step >= 3 ? 1 : 0) - state.a) * Math.min(1, dt * 1.2);
+  const A = (id) => state.scen === id ? state.a : 0;
+  // muddy river: river and clarifier turn brown; alum pump works; clarifier clears
+  const mud = state.scen === 'muddy' ? 1 : 0;
+  riverMat.color.copy(riverCol).lerp(muddyCol, mud * 0.75);
+  clarMat.color.copy(clearCol).lerp(muddyCol, mud ? 0.8 * (1 - A('muddy')) : 0.15);
+  alumLed.material.color.set(A('muddy') > 0.3 && Math.sin(T * 10) > 0 ? 0x3fd17a : (A('muddy') > 0.3 ? 0x1c5a34 : 0x3fd17a));
+  alumPump.scale.y = 1 + 0.08 * A('muddy') * Math.sin(T * 20);
+  // aeration: bubbles follow blower speed
+  const blower = 1 - 0.35 * A('air');
+  blowerFan.rotation.x += dt * 16 * blower * (reduce ? 0 : 1);
+  bubbles.p.material.opacity = 0.35 + 0.5 * blower;
+  if (!reduce) {
+    for (let i = 0; i < bubbles.n; i++) { bubbles.pos[i*3+1] += dt * (0.5 + (i % 4) * 0.2) * blower; if (bubbles.pos[i*3+1] > 2.1) bubbles.spawn(bubbles.pos, i, false); }
+    bubbles.p.geometry.attributes.position.needsUpdate = true;
+    for (let i = 0; i < spray.n; i++) { spray.pos[i*3+1] += dt * (1.6 - (spray.pos[i*3+1] - 0.3) * 2); if (spray.pos[i*3+1] > 1.3 || spray.pos[i*3+1] < 0.25) spray.spawn(spray.pos, i, false); }
+    spray.p.geometry.attributes.position.needsUpdate = true;
+  }
+  // leak: spray until the crew fixes it; crew walks over
+  const lk = state.scen === 'leak' ? 1 - A('leak') : 0;
+  leak.p.material.opacity = lk * 0.85;
+  if (lk > 0.01 && !reduce) { for (let i = 0; i < leak.n; i++) { leak.pos[i*3+1] += dt * (2 - (leak.pos[i*3+1] - 0.2) * 1.3); leak.pos[i*3] += dt * ((i % 3) - 1) * 0.5; if (leak.pos[i*3+1] > 1.8 || leak.pos[i*3+1] < 0.15) leak.spawn(leak.pos, i, false); } leak.p.geometry.attributes.position.needsUpdate = true; }
+  tech.visible = A('leak') > 0.02;
+  tech.position.copy(techStart).lerp(V(9.5, 0, 12.4), Math.min(1, A('leak') * 1.15));
+  // night-time look for the leak story: house windows dim
+  F.w.forEach((f, j) => { f.target = 0.85; f.rate = j === 2 && state.scen === 'leak' ? 1 + lk * 0.6 : 1; });
+  for (const key in SENS) { const s = SENS[key], hot = key === sc.sensor;
+    s.glow.scale.setScalar(hot && state.step <= 1 ? 0.9 + 0.25 * Math.sin(T * 5) : state.step === 0 ? 0.55 + 0.2 * Math.sin(T * 6 + s.pos.x) : 0.35); }
+  gwLed.material.color.set((state.step === 1 || state.step === 3) && Math.sin(T * 14) > 0 ? 0x26c2ff : 0x1d4050);
+  const thinking = state.step === 2, spin = reduce ? 0 : 1;
+  core.rotation.y += dt * (thinking ? 2.2 : 0.4) * spin; core.rotation.x += dt * (thinking ? 1.1 : 0.2) * spin;
+  coreIn.scale.setScalar(1 + (thinking ? 0.18 * Math.sin(T * 8) : 0));
+  rings.forEach((r, j) => { const q = (T * 0.7 + j / 3) % 1; r.scale.setScalar(1 + q * 2.2); r.material.opacity = thinking ? (1 - q) * 0.8 : 0; r.lookAt(camera.position); });
+  phone.position.y = PHONE.y + (reduce ? 0 : Math.sin(T * 1.4) * 0.18);
+  phone.lookAt(tmp.copy(camera.position).setY(phone.position.y + 1));
+  phone.scale.setScalar(state.step === 4 ? 1.08 : 1);
+
+  flows.forEach(f => f.update(dt));
+  controls.update();
+  renderer.render(scene, camera);
+
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const L of labels) {
+    tmp.copy(L.pos).project(camera);
+    const vis = L.on && tmp.z < 1 && Math.abs(tmp.x) < 1.1 && Math.abs(tmp.y) < 1.1;
+    L.el.classList.toggle('on', vis);
+    if (!vis) continue;
+    const hw = L.el.offsetWidth / 2 + 6, px = Math.max(hw, Math.min(w - hw, (tmp.x + 1) / 2 * w));
+    L.el.style.transform = `translate(${px.toFixed(1)}px, ${((1 - tmp.y) / 2 * h).toFixed(1)}px) translate(-50%, calc(-100% - 8px))`;
+  }
+  requestAnimationFrame(frame);
+}
+setScen('muddy');
+frame();
+})();
+</script>
+
+</body></html>

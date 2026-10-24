@@ -1,0 +1,682 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Smart Solar Plant Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a 3D solar plant on one big stage, a step rail, a plain-language caption, then the parts and the ways AI raises output. */
+:root{
+  --bg:#f6f4ef; --surface:#ffffff; --ink:#1f1d17; --muted:#68645a; --line:#e3ded2;
+  --accent:#b86a00; --accent-ink:#ffffff;
+  --read:#0f9bd7; --cmd:#1fae55; --msg:#d83a83; --ai:#6a55e6; --warn:#d9861a; --ok:#14894f;
+  --cold:#e8b100; --warm:#ef6c2f;
+  --sky:#e5ecf2; --ground:#8c8a68;
+  --font-display:"Sora", "Segoe UI", system-ui, sans-serif;
+  --font-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#13120e; --surface:#1c1b16; --ink:#efece4; --muted:#a39e90; --line:#302e26;
+  --accent:#f5a524; --accent-ink:#1a1003;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --cold:#ffd23f; --warm:#ff8a4f;
+  --sky:#0b0f13; --ground:#26241c; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#13120e; --surface:#1c1b16; --ink:#efece4; --muted:#a39e90; --line:#302e26;
+  --accent:#f5a524; --accent-ink:#1a1003;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --cold:#ffd23f; --warm:#ff8a4f;
+  --sky:#0b0f13; --ground:#26241c; color-scheme:dark }
+
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:18px}
+header{display:grid;gap:6px;max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.4vw,44px);line-height:1.06;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:0;font-size:17px}
+
+.stage{position:relative;height:clamp(460px,66vh,700px);border-radius:18px;overflow:hidden;background:var(--sky);border:1px solid var(--line);touch-action:none}
+.stage canvas{display:block;width:100%;height:100%;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;white-space:nowrap;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:5px 9px 5px 8px;font-size:12.5px;line-height:1.25;box-shadow:0 4px 14px rgba(0,0,0,.12);opacity:0;transition:opacity .45s;display:flex;gap:7px;align-items:center}
+.lbl.on{opacity:1}
+.lbl i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c,var(--read))}
+.lbl b{font-weight:700}
+.lbl span{color:var(--muted)}
+.lbl em{font-style:normal;font-weight:700;color:var(--c,var(--read));font-variant-numeric:tabular-nums}
+.lbl::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+
+.hud{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:grid;gap:2px;min-width:190px;box-shadow:0 6px 18px rgba(0,0,0,.1)}
+.hud .sc{font-size:12px;color:var(--muted)}
+.hud .mv{font-family:var(--font-display);font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.hud .ml{font-size:12px;color:var(--muted)}
+.hud .cf{font-size:12px;color:var(--ok);font-weight:700}
+.chip{justify-self:start;margin-top:4px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--sev) 16%,transparent);color:var(--sev)}
+.think{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:12px;width:min(320px,calc(100% - 24px));background:var(--surface);border:1px solid var(--ai);border-radius:14px;padding:12px 14px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.12);opacity:0;transform:translateY(-6px);transition:opacity .4s,transform .4s;pointer-events:none}
+.think.on{opacity:1;transform:none}
+.think .h{font-weight:700;color:var(--ai);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.think ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.think li{display:grid;grid-template-columns:18px 1fr auto;gap:6px;align-items:start;font-size:13px}
+.think li .m{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px}
+.think li.y .m{background:var(--ok)}
+.think li.n .m{background:var(--muted)}
+.think li.n{color:var(--muted)}
+.think li .s{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ok)}
+.think li.n .s{color:var(--muted);font-weight:400}
+.legend{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;right:12px;display:flex;gap:6px 12px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 24px);background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:12px}
+.legend span{display:flex;gap:6px;align-items:center}
+.legend i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.legend i.p{border-radius:2px;height:5px;width:14px}
+.parts-btn{all:unset;cursor:pointer;position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;display:flex;gap:7px;align-items:center}
+.parts-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.parts-btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.rail{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
+.step{all:unset;cursor:pointer;position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.step:focus-visible,.ctl:focus-visible,.scen button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.step .n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.step .t{font-family:var(--font-display);font-weight:800;font-size:16px}
+.step .bar{position:absolute;left:0;bottom:0;height:3px;width:calc(var(--p,0)*100%);background:var(--accent)}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ctrls{display:flex;gap:8px}
+.ctl{all:unset;cursor:pointer;display:grid;place-items:center;width:52px;min-height:52px;border-radius:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-sizing:border-box}
+.ctl:hover{border-color:var(--accent)}
+.ctl svg{width:20px;height:20px}
+.ctl.next{width:auto;padding:0 16px;grid-auto-flow:column;gap:6px;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0}
+
+.below{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px}
+.caption{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:grid;gap:8px;align-content:start}
+.caption h2{font-family:var(--font-display);font-size:24px;line-height:1.15;margin:0;text-wrap:balance}
+.caption p{margin:0;max-width:62ch}
+.caption .ex{border-top:1px dashed var(--line);padding-top:10px}
+.caption .ex b{color:var(--accent)}
+.side{display:grid;gap:10px;align-content:start}
+.side h3{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.scen{display:grid;gap:8px}
+.scen button{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.scen button .d{grid-row:span 2;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.scen button b{font-weight:700}
+.scen button small{color:var(--muted);font-size:13px;grid-column:2}
+.scen button .sv{grid-row:1/span 2;grid-column:3;font-weight:700;color:var(--ok);font-size:13px;font-variant-numeric:tabular-nums}
+.scen button[aria-pressed="true"]{border-color:var(--accent)}
+.scen button[aria-pressed="true"] .d{background:var(--accent)}
+
+.sec{display:grid;gap:12px;margin-top:10px}
+.sec h2{font-family:var(--font-display);font-size:22px;margin:0}
+.sec .sub{margin:0;color:var(--muted);max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.part{border-top:3px solid var(--c);background:var(--surface);border-radius:4px 4px 14px 14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.part b{font-family:var(--font-display);font-size:17px}
+.part p{margin:0;color:var(--muted);font-size:14.5px}
+.part ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.lever{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.lever b{font-family:var(--font-display);font-size:16.5px}
+.lever p{margin:0;color:var(--muted);font-size:14.5px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.fallback{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+@media (max-width:760px){
+  .rail{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .ctrls{grid-column:1/-1}
+  .ctrls>button{flex:1;min-height:44px}
+  .step{padding:8px 6px;text-align:center}
+  .step .t{font-size:13px}
+  .below{grid-template-columns:minmax(0,1fr)}
+  .stage{height:520px}
+  .hud{min-width:0;padding:8px 11px}
+  .hud .mv{font-size:22px}
+  .legend{font-size:11px;gap:4px 8px;bottom:52px}
+  .lbl{font-size:11px;padding:4px 7px}
+  .lbl span{display:none}
+  .think{top:auto;bottom:52px}
+}
+@media (prefers-reduced-motion: reduce){.lbl,.think{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Smart Solar</div>
+    <h1>How AI squeezes more power out of every panel</h1>
+    <p class="lede">A 628 kWp solar plant with 4 inverters and 48 strings of panels. Follow one problem from start to finish: sensors notice lost power, the AI finds the cause, the fix happens, and you see the power come back. Drag to turn the 3D view.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of a solar plant with four blocks of panels, inverters, a transformer and grid tower, a weather station, a control room, a drone and a cleaning robot, with animated data moving to a cloud AI"></canvas>
+    <div class="overlay" id="overlay"></div>
+    <div class="hud" aria-live="polite">
+      <div class="sc" id="hudScen"></div>
+      <div class="mv" id="hudVal"></div>
+      <div class="ml" id="hudLbl"></div>
+      <div class="chip" id="hudChip"></div>
+      <div class="cf" id="hudPlant">Plant output 541 kW</div>
+    </div>
+    <div class="think" id="think"></div>
+    <div class="legend" aria-label="Colours">
+      <span style="--c:var(--read)"><i></i>Readings</span>
+      <span style="--c:var(--cmd)"><i></i>Instructions</span>
+      <span style="--c:var(--msg)"><i></i>Messages to you</span>
+      <span style="--c:var(--cold)"><i class="p"></i>DC power</span>
+      <span style="--c:var(--warm)"><i class="p"></i>AC power to grid</span>
+    </div>
+    <button class="parts-btn" id="partsBtn" aria-pressed="false">Label all parts</button>
+  </div>
+
+  <nav class="rail" aria-label="Steps">
+    <button class="step" data-i="0"><span class="n">Step 1</span><span class="t">Sense</span><span class="bar"></span></button>
+    <button class="step" data-i="1"><span class="n">Step 2</span><span class="t">Send</span><span class="bar"></span></button>
+    <button class="step" data-i="2"><span class="n">Step 3</span><span class="t">Think</span><span class="bar"></span></button>
+    <button class="step" data-i="3"><span class="n">Step 4</span><span class="t">Act</span><span class="bar"></span></button>
+    <button class="step" data-i="4"><span class="n">Step 5</span><span class="t">Tell you</span><span class="bar"></span></button>
+    <div class="ctrls">
+      <button class="ctl" id="repeat" aria-label="Repeat this step" title="Repeat this step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+      <button class="ctl" id="play" aria-label="Pause" title="Play / pause"></button>
+      <button class="ctl next" id="next" aria-label="Next step">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </nav>
+
+  <section class="below">
+    <article class="caption" aria-live="polite">
+      <h2 id="capT"></h2>
+      <p id="capD"></p>
+      <p class="ex" id="capX"></p>
+    </article>
+    <aside class="side">
+      <h3>Pick a problem</h3>
+      <div class="scen" id="scen"></div>
+    </aside>
+  </section>
+
+  <section class="sec">
+    <h2>The main parts, in plain words</h2>
+    <div class="grid">
+      <div class="part" style="--c:var(--cold)"><b>Panels and strings</b><p>Panels turn sunlight into DC electricity. About 20 panels are wired in a row called a string. This plant has 48 strings.</p></div>
+      <div class="part" style="--c:var(--cold)"><b>String combiner boxes</b><p>Join several strings together, with a fuse for each. They also measure the current of every string.</p></div>
+      <div class="part" style="--c:var(--warm)"><b>Inverters</b><p>Turn DC power from the panels into AC power, like the supply at home. Each block of panels has one.</p></div>
+      <div class="part" style="--c:var(--warm)"><b>Transformer and grid line</b><p>Step the voltage up so the power can travel on the grid. The export meter counts every unit sold.</p></div>
+      <div class="part" style="--c:var(--read)"><b>Weather station</b><p>Measures sunlight (irradiance), panel and air temperature, wind and rain. This tells the AI how much power the plant should be making.</p></div>
+      <div class="part" style="--c:var(--read)"><b>Drone with thermal camera</b><p>Flies over the plant and sees heat. Faulty panels show up as hot spots.</p></div>
+      <div class="part" style="--c:var(--accent)"><b>Cleaning robots</b><p>Move along the rows with soft brushes and very little water, usually at night.</p></div>
+      <div class="part" style="--c:var(--read)"><b>Control room (SCADA)</b><p>Collects all readings on site, controls the inverters and sends the data to the cloud.</p></div>
+      <div class="part" style="--c:var(--ai)"><b>Cloud AI</b><p>Knows how much power each block should make right now, spots the gap, finds the cause and decides the most profitable fix.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Six ways the AI raises output</h2>
+    <p class="sub">A solar plant rarely breaks all at once. It loses a few percent here and there. The AI finds those small losses and fixes them fast.</p>
+    <div class="grid">
+      <div class="lever"><b>Expected vs actual, every minute</b><p>Weather data tells the AI what each block should make. Any gap is spotted the same day.</p></div>
+      <div class="lever"><b>Clean only when it pays</b><p>Cleaning costs money. The AI cleans each block when the lost power is worth more than the cleaning.</p></div>
+      <div class="lever"><b>Find a dead string in minutes</b><p>One string out of 48 is easy to miss by eye. The AI points to the exact string and fuse.</p></div>
+      <div class="lever"><b>Read drone heat maps</b><p>Thousands of thermal images are checked automatically. Each hot panel gets a row and table number.</p></div>
+      <div class="lever"><b>Predict inverter trouble</b><p>Rising temperature, fan noise or insulation alarms are caught before the inverter trips.</p></div>
+      <div class="lever"><b>Forecast tomorrow</b><p>Accurate generation forecasts help schedule power with the grid and avoid penalties.</p></div>
+    </div>
+    <p class="note">All numbers in this demo are examples for one 628 kWp plant, valued at ₹4.5 per kWh.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $ = (s) => document.querySelector(s);
+const stage = $('#stage'), overlay = $('#overlay'), canvas = $('#c');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- story ---------- */
+const STEPS = [
+  { t:'Sensors measure the sun and every string of panels', d:'The weather station measures how strong the sunlight is. Combiner boxes measure the current in every string, inverters report their power, and the drone takes heat pictures from above.' },
+  { t:'The control room sends it all to the cloud', d:'The SCADA computer in the control room collects every reading and sends it over the internet every minute. Nothing is lost if the network drops.' },
+  { t:'The AI compares what the plant makes with what it should make', d:'From the sunlight it knows how much each block should produce. When there is a gap, it looks at the pattern to find the cause and the most profitable fix.' },
+  { t:'The fix happens, by robot or by the right technician', d:'Some fixes are automatic, like sending a cleaning robot. Others go to a technician’s phone with the exact row, table and fuse to check.' },
+  { t:'You see what was lost and what came back', d:'The plant manager gets a short message with the cause, the fix and the power recovered. They can ask questions in plain words.' },
+];
+const SCEN = {
+  dust: { name:'Dusty panels', time:'1:15 PM', blurb:'Block 2 output falling', sensor:'weather', plant:[541, 554],
+    metric:{ label:'Block 2 output', from:118, to:131, unit:' kW' },
+    sense:'The weather station measures strong sun, <b>940 W/m²</b>, but Block 2 makes <b>10 % less</b> power than that sunlight should give.',
+    think:'Output fell slowly over 9 dry days, on every string of Block 2 equally. That pattern means dust, not a fault.',
+    options:[['Clean Block 2 now with the robot','+13 kW · ₹470/day',1],['Leave the other blocks for next week','losses still small',1],['Clean the whole plant today','costs more than it earns',0]],
+    act:['robot'], actLbl:'Cleaning Block 2',
+    actX:'The cleaning robot moves along Block 2’s rows with a soft brush and a little water. Block 2 rises from 118 to <b>131 kW</b>.',
+    phone:{ title:'Block 2 cleaned', body:'Dust was costing 10 % on Block 2. Robot cleaned it at 1:15 PM. Output back to 131 kW.' },
+    status:['Losing power','Cleaning…','Recovered'] },
+  string: { name:'String fault', time:'10:40 AM', blurb:'One string stopped working', sensor:'scb', plant:[528, 541],
+    metric:{ label:'Block 3 output', from:126, to:139, unit:' kW' },
+    sense:'The combiner box in Block 3 reads <b>0 amps</b> on string S7, while its 11 neighbours read about <b>9 amps</b> each.',
+    think:'One string at zero while its neighbours are normal points to a blown fuse or a loose connector, not the weather.',
+    options:[['Send a technician to S7 with a map pin','+13 kW',1],['Check fuse F7 in combiner box 3 first','most likely cause',1],['Wait for the monthly inspection','lose ~₹1,000 a day',0]],
+    act:['tech'], actLbl:'Technician to string S7',
+    actX:'A work order with a map pin goes to the technician’s phone. The blown fuse in combiner box 3 is replaced and S7 comes back. Block 3 rises to <b>139 kW</b>.',
+    phone:{ title:'String S7 repaired', body:'S7 in Block 3 was at 0 A from 10:40 AM. Fuse replaced in 35 minutes. Block 3 back to 139 kW.' },
+    status:['String down','Repairing…','Recovered'] },
+  hot: { name:'Hot panel', time:'9:30 AM', blurb:'Drone finds a hotspot', sensor:'drone', plant:[540, 541],
+    metric:{ label:'Hottest panel temperature', from:82, to:47, unit:' °C' },
+    sense:'The drone’s thermal camera flies over Block 4 and finds one panel at <b>82 °C</b>. The panels around it are at 47 °C.',
+    think:'A single very hot panel points to a cracked cell or a failed diode. Left alone it loses power and can become a fire risk.',
+    options:[['Replace the panel this week','safe · +0.5 kW',1],['Log it in the drone report for the insurer','record kept',1],['Leave it until it fails','fire risk',0]],
+    act:['swap'], actLbl:'Panel swap booked',
+    actX:'A ticket with the exact row, table and panel number is created and a technician swaps the panel. The hottest panel is now <b>47 °C</b>, like its neighbours.',
+    phone:{ title:'Hot panel replaced', body:'Panel B4-R2-T5 was at 82 °C. Replaced with a spare. Now 47 °C.' },
+    status:['Hotspot','Fixing…','Normal'] },
+};
+const ORDER = ['dust','string','hot'];
+const DUR = 7;
+
+/* ---------- WebGL ---------- */
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias:true }); }
+catch(e){ stage.insertAdjacentHTML('beforeend','<div class="fallback">This browser could not start the 3D view. The steps below still explain each stage.</div>'); }
+if (!renderer) return;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
+const flows = [], labels = [];
+const V = (x,y,z) => new THREE.Vector3(x,y,z);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.enablePan = false;
+controls.minDistance = 18; controls.maxDistance = 130; controls.maxPolarAngle = 1.48;
+controls.target.set(6, 4, -2);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x9a917a, 0.75); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 1.0);
+sun.position.set(-10, 40, 30); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-38, right:38, top:38, bottom:-38, near:1, far:120 });
+scene.add(sun);
+
+const std = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness:0.8, metalness:0.05 }, o));
+const mesh = (geo, mat, x=0, y=0, z=0, parent=scene) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+const sphere = new THREE.SphereGeometry(1, 14, 10);
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.35,'rgba(255,255,255,.8)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+function particles(n, color, size, spawn) {
+  const geo = new THREE.BufferGeometry(); const pos = new Float32Array(n*3);
+  for (let i = 0; i < n; i++) spawn(pos, i, true);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color, size, map:dotTex, transparent:true, opacity:0, depthWrite:false });
+  const p = new THREE.Points(geo, mat); scene.add(p); return { p, pos, n, spawn };
+}
+
+/* ground */
+const groundMat = std(0xb5aa86, { roughness:1 });
+const ground = new THREE.Mesh(new THREE.CircleGeometry(130, 48), groundMat);
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+const road = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 34), std(0x9a917a, { roughness:1 })); road.rotation.x = -Math.PI/2; road.position.set(-0.5, 0.02, 0); scene.add(road);
+const road2 = new THREE.Mesh(new THREE.PlaneGeometry(46, 2.2), std(0x9a917a, { roughness:1 })); road2.rotation.x = -Math.PI/2; road2.position.set(4, 0.02, 0); scene.add(road2);
+
+/* ---------- panel blocks ---------- */
+const BLOCKS = [
+  { id:1, x:-9, z:-7.5 }, { id:2, x:-9, z:7.5 }, { id:3, x:8.5, z:-7.5 }, { id:4, x:8.5, z:7.5 },
+];
+const panelBase = 0x1f3a66;
+const panelGeo = new THREE.BoxGeometry(2.1, 0.07, 1.5), legGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 5);
+const legMat = std(0x9aa3a9, { metalness:0.6, roughness:0.4 });
+const COLS = 6, ROWS = 4, DX = 2.25, DZ = 2.9;
+let s7Mat, hotPanel;
+BLOCKS.forEach(B => {
+  B.mat = std(panelBase, { metalness:0.45, roughness:0.28 });
+  B.x0 = B.x - (COLS - 1) * DX / 2; B.z0 = B.z - (ROWS - 1) * DZ / 2;
+  if (B.id === 3) s7Mat = std(panelBase, { metalness:0.45, roughness:0.28, emissive:0x000000 });
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const x = B.x0 + c * DX, z = B.z0 + r * DZ;
+    const useS7 = B.id === 3 && r === 1 && c >= 2;
+    const p = mesh(panelGeo, useS7 ? s7Mat : B.mat, x, 1.05, z); p.rotation.x = 0.42;
+    mesh(legGeo, legMat, x, 0.5, z - 0.35).scale.y = 0.75;
+    mesh(legGeo, legMat, x, 0.6, z + 0.35);
+    if (B.id === 4 && r === 1 && c === 4) hotPanel = p;
+  }
+  // combiner box + inverter at the aisle end of each block
+  const ex = B.x > 0 ? B.x0 + COLS * DX + 0.3 : B.x0 + COLS * DX + 0.2;
+  B.scb = V(ex, 0.8, B.z + 1.2); B.inv = V(ex + (B.x > 0 ? 1.6 : 1.6), 0, B.z - 1);
+  mesh(new THREE.BoxGeometry(0.5, 0.8, 0.35), std(0xd9dcde), B.scb.x, 0.6, B.scb.z);
+  mesh(new THREE.BoxGeometry(1.1, 1.6, 0.8), std(0xe9ecef, { roughness:0.5 }), B.inv.x, 0.8, B.inv.z);
+  for (let k = 0; k < 4; k++) mesh(new THREE.BoxGeometry(0.02, 1.2, 0.6), std(0x9aa3a9), B.inv.x + 0.57, 0.8, B.inv.z - 0.24 + k * 0.16);
+  B.led = mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color:0x3fd17a }), B.inv.x, 1.45, B.inv.z + 0.41);
+});
+// hot spot marker on one panel
+const hotSpot = new THREE.Mesh(new THREE.CircleGeometry(0.22, 16), new THREE.MeshBasicMaterial({ color:0xff3b1f, transparent:true, opacity:0 }));
+hotSpot.position.set(0, 0.045, 0.1); hotSpot.rotation.x = -Math.PI/2; hotPanel.add(hotSpot);
+
+/* transformer, switchyard, grid tower */
+const TX = V(24, 0, 0);
+mesh(new THREE.BoxGeometry(3, 0.3, 3.4), std(0xbdb7a6), TX.x, 0.15, TX.z);
+mesh(new THREE.BoxGeometry(2, 2, 1.6), std(0x6f8a5a), TX.x, 1.3, TX.z);
+for (let k = 0; k < 5; k++) mesh(new THREE.BoxGeometry(0.06, 1.6, 1.4), std(0x5b744a), TX.x - 1.05, 1.3, TX.z - 0.6 + k * 0.3);
+for (const dz of [-0.5, 0, 0.5]) mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.8, 8), std(0x8d6e4e), TX.x + 0.3, 2.7, TX.z + dz);
+const meterBox = mesh(new THREE.BoxGeometry(0.6, 1, 0.4), std(0x2b3238), TX.x + 1.4, 1, TX.z + 1.9);
+const meterScr = mesh(new THREE.PlaneGeometry(0.4, 0.25), new THREE.MeshBasicMaterial({ color:0x26c2ff }), TX.x + 1.4, 1.15, TX.z + 2.11);
+const TOWER = V(31, 0, 0);
+for (const [dx, dz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) { const l = mesh(new THREE.CylinderGeometry(0.06, 0.1, 11, 5), std(0x9aa3a9, { metalness:0.6 }), TOWER.x + dx * 0.55, 5.5, TOWER.z + dz * 0.55); l.rotation.z = -dx * 0.05; l.rotation.x = dz * 0.05; }
+mesh(new THREE.BoxGeometry(0.15, 0.15, 5), std(0x9aa3a9), TOWER.x, 10.2, TOWER.z);
+mesh(new THREE.BoxGeometry(0.15, 0.15, 3.5), std(0x9aa3a9), TOWER.x, 8.6, TOWER.z);
+const wire = (a, b) => { const mid = a.clone().add(b).multiplyScalar(0.5); mid.y -= 1.2; const c = new THREE.QuadraticBezierCurve3(a, mid, b);
+  const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(c.getPoints(30)), new THREE.LineBasicMaterial({ color:0x555555 })); scene.add(l); };
+for (const dz of [-2.3, 0, 2.3]) wire(V(TOWER.x, 10.1, TOWER.z + dz), V(TOWER.x + 30, 10.1, TOWER.z + dz * 1.2));
+for (const dz of [-0.5, 0, 0.5]) wire(V(TX.x + 0.3, 3.1, TX.z + dz), V(TOWER.x, 8.5, TOWER.z + dz * 3));
+
+/* control room with gateway */
+const CR = V(24, 0, -10);
+mesh(new THREE.BoxGeometry(5, 3, 3.6), std(0xeef0f1), CR.x, 1.5, CR.z);
+mesh(new THREE.BoxGeometry(5.3, 0.25, 3.9), std(0x4a5560), CR.x, 3.1, CR.z);
+mesh(new THREE.BoxGeometry(1.4, 0.9, 0.05), std(0x5f7d8c), CR.x - 1, 1.8, CR.z + 1.82);
+mesh(new THREE.BoxGeometry(0.8, 1.8, 0.05), std(0x6b4a33), CR.x + 1.3, 0.9, CR.z + 1.82);
+const GW = V(CR.x + 1.6, 4.9, CR.z - 0.6);
+mesh(new THREE.CylinderGeometry(0.04, 0.04, 2, 6), std(0x30373d), GW.x, 4.2, GW.z);
+mesh(new THREE.BoxGeometry(0.6, 0.5, 0.35), std(0xf2f4f5), GW.x, 4.9, GW.z);
+const gwLed = mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshBasicMaterial({ color:0x26c2ff }), GW.x, 5.05, GW.z + 0.2);
+
+/* weather station */
+const WS = V(-21, 0, 0);
+mesh(new THREE.CylinderGeometry(0.06, 0.08, 4, 8), legMat, WS.x, 2, WS.z);
+mesh(new THREE.BoxGeometry(1.4, 0.06, 0.06), legMat, WS.x, 3.4, WS.z);
+const pyr = mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.08, 14), std(0xf5f7f8), WS.x - 0.6, 3.5, WS.z); pyr.rotation.x = 0.42;
+mesh(new THREE.SphereGeometry(0.12, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), std(0xe8f2ff, { transparent:true, opacity:0.8 }), WS.x - 0.6, 3.56, WS.z);
+const cups = new THREE.Group(); cups.position.set(WS.x, 4.15, WS.z); scene.add(cups);
+for (let k = 0; k < 3; k++) { const arm = new THREE.Group(); arm.rotation.y = k * 2.094; cups.add(arm);
+  mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.45, 4), legMat, 0.22, 0, 0, arm).rotation.z = Math.PI/2;
+  mesh(new THREE.SphereGeometry(0.09, 8, 6, 0, Math.PI), std(0xe9eef0), 0.45, 0, 0, arm); }
+mesh(new THREE.BoxGeometry(0.45, 0.5, 0.3), std(0xf2f4f5), WS.x + 0.5, 3.1, WS.z);
+
+/* cleaning robot on Block 2, row 2 */
+const B2 = BLOCKS[1], ROBOT_Z = B2.z0 + 1 * DZ;
+const robot = new THREE.Group(); scene.add(robot);
+mesh(new THREE.BoxGeometry(0.5, 0.3, 1.6), std(0xf2b134), 0, 0, 0, robot);
+const brush = mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.5, 10), std(0x3b4248), -0.3, -0.12, 0, robot); brush.rotation.x = Math.PI/2;
+robot.rotation.x = 0.42;
+const mist = particles(60, 0xd8f0ff, 0.35, (a, i, init) => { a[i*3] = B2.x; a[i*3+1] = 1.3 + Math.random() * 0.5; a[i*3+2] = ROBOT_Z; });
+
+/* drone */
+const drone = new THREE.Group(); scene.add(drone);
+mesh(new THREE.BoxGeometry(0.6, 0.18, 0.6), std(0x2b2f33), 0, 0, 0, drone);
+const props = [];
+for (const [dx, dz] of [[-0.5,-0.5],[0.5,-0.5],[-0.5,0.5],[0.5,0.5]]) { mesh(new THREE.BoxGeometry(0.5, 0.04, 0.06), std(0x2b2f33), dx * 0.5, 0, dz * 0.5, drone).rotation.y = Math.atan2(dz, dx);
+  props.push(mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.02, 12), new THREE.MeshStandardMaterial({ color:0xdddddd, transparent:true, opacity:0.6 }), dx, 0.08, dz, drone)); }
+const cone = new THREE.Mesh(new THREE.ConeGeometry(1.6, 4, 24, 1, true), new THREE.MeshBasicMaterial({ color:0xff8a3d, transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false }));
+cone.position.y = -2.1; drone.add(cone);
+
+/* technician */
+const tech = new THREE.Group(); scene.add(tech);
+mesh(new THREE.CylinderGeometry(0.22, 0.25, 1, 10), std(0xf28c28), 0, 0.65, 0, tech);
+mesh(sphere, std(0xe0b48f), 0, 1.35, 0, tech).scale.setScalar(0.18);
+mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.1, 12), std(0xf6d32d), 0, 1.5, 0, tech);
+
+/* cloud + AI core */
+const CLOUD = V(2, 18, -13), CROT = 0.5;
+const cloud = new THREE.Group(); cloud.position.copy(CLOUD); cloud.rotation.y = CROT; scene.add(cloud);
+const cloudMat = new THREE.MeshStandardMaterial({ color:0xffffff, roughness:1, transparent:true, opacity:0.93 });
+[[0,0,0,2.4],[-2.4,-0.4,0.3,1.8],[2.5,-0.3,-0.2,1.9],[-1.2,1.1,-0.5,1.7],[1.3,1.2,0.3,1.5],[4,-0.6,0.3,1.2],[-4,-0.7,0,1.2]].forEach(([x,y,z,r]) => {
+  const m = new THREE.Mesh(sphere, cloudMat); m.position.set(x,y,z+1.2); m.scale.setScalar(r); cloud.add(m); });
+const coreMat = new THREE.MeshBasicMaterial({ color:0x6a55e6 });
+const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 1), new THREE.MeshBasicMaterial({ color:0x6a55e6, wireframe:true })); core.position.set(0, 0.2, 3.9); cloud.add(core);
+const coreIn = new THREE.Mesh(new THREE.IcosahedronGeometry(0.6, 0), coreMat); coreIn.position.copy(core.position); cloud.add(coreIn);
+const rings = [0,1,2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.04, 6, 48), new THREE.MeshBasicMaterial({ color:0x6a55e6, transparent:true, opacity:0 })); r.position.copy(core.position); cloud.add(r); return r; });
+const CORE = CLOUD.clone().add(V(3.9 * Math.sin(CROT), 0.2, 3.9 * Math.cos(CROT)));
+
+/* phone */
+const PHONE = V(24, 13, -18);
+const phone = new THREE.Group(); phone.position.copy(PHONE); scene.add(phone);
+mesh(new THREE.BoxGeometry(2.6, 5, 0.24), std(0x1b1f24, { roughness:0.3, metalness:0.3 }), 0, 0, 0, phone);
+const phoneCv = document.createElement('canvas'); phoneCv.width = 360; phoneCv.height = 720;
+const phoneTex = new THREE.CanvasTexture(phoneCv);
+const pscreen = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 4.8), new THREE.MeshBasicMaterial({ map:phoneTex })); pscreen.position.z = 0.13; phone.add(pscreen);
+phone.traverse(o => { o.castShadow = false; });
+
+/* ---------- sensors ---------- */
+const B3 = BLOCKS[2], B4 = BLOCKS[3];
+const SENS = {
+  weather: { pos:V(WS.x - 0.6, 3.6, WS.z), name:'Weather station', what:'Sunlight · temp · wind' },
+  modt:    { pos:V(B2.x0 + 1 * DX, 0.75, B2.z0 + 2 * DZ + 0.3), name:'Panel temp sensor', what:'Block 2' },
+  scb:     { pos:B3.scb.clone().add(V(0, 0.45, 0)), name:'Combiner box 3', what:'Current of every string' },
+  inv:     { pos:V(B3.inv.x, 1.7, B3.inv.z), name:'Inverter 3', what:'Power · temperature' },
+  meter:   { pos:V(TX.x + 1.4, 1.6, TX.z + 1.9), name:'Export meter', what:'Units sold to the grid' },
+  drone:   { pos:V(16, 7, 6), name:'Drone thermal camera', what:'Heat map of panels' },
+};
+for (const k in SENS) { const s = SENS[k];
+  s.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0x0f9bd7, transparent:true, opacity:0.85, depthWrite:false }));
+  s.glow.position.copy(s.pos).add(V(0, 0.3, 0)); s.glow.scale.setScalar(0.6); scene.add(s.glow); }
+if (true) mesh(new THREE.BoxGeometry(0.3, 0.2, 0.15), std(0xf6f8f9), SENS.modt.pos.x, SENS.modt.pos.y, SENS.modt.pos.z);
+
+/* ---------- flows ---------- */
+class Flow {
+  constructor(pts, kind, n = 4, speed = 0.32, size = 0.2, line = true) {
+    this.curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    this.kind = kind; this.speed = speed; this.on = 0; this.target = 0; this.off = Math.random(); this.rate = 1;
+    this.lineMat = new THREE.LineDashedMaterial({ color:0xffffff, dashSize:0.35, gapSize:0.28, transparent:true, opacity:0, depthWrite:false });
+    this.line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(this.curve.getPoints(100)), this.lineMat);
+    this.line.computeLineDistances(); this.hasLine = line; if (line) scene.add(this.line);
+    this.dots = [];
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 8), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0 }));
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0xffffff, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }));
+      g.scale.setScalar(size * 5); m.add(g); scene.add(m); this.dots.push({ m, g });
+    }
+    flows.push(this);
+  }
+  color(c) { this.lineMat.color.set(c); this.dots.forEach(d => { d.m.material.color.set(c); d.g.material.color.set(c); }); }
+  update(dt) {
+    this.on += (this.target - this.on) * Math.min(1, dt * 3.5);
+    if (!reduce) this.off = (this.off + dt * this.speed * this.rate) % 1;
+    const vis = this.on > 0.01;
+    this.line.visible = vis && this.hasLine; this.lineMat.opacity = this.on * 0.6;
+    this.dots.forEach((d, i) => { d.m.visible = vis; if (!vis) return;
+      const t = (this.off + i / this.dots.length) % 1; d.m.position.copy(this.curve.getPointAt(t));
+      const edge = Math.min(1, t * 8, (1 - t) * 8); d.m.material.opacity = this.on * edge; d.g.material.opacity = this.on * edge * 0.55; });
+  }
+}
+const arc = (a, b, h) => [a.clone(), V(a.x, a.y + 1.5, a.z), V((a.x + b.x) / 2, Math.max(a.y, b.y) + h, (a.z + b.z) / 2), b.clone()];
+const F = { sense:{} };
+for (const k in SENS) F.sense[k] = new Flow(arc(SENS[k].pos, GW, 4), 'read', 3, 0.3, 0.16);
+F.send = new Flow([GW.clone(), V(15, 13, -12), CORE.clone().add(V(0.3, 0.4, 0))], 'read', 5, 0.3, 0.26);
+F.cmd  = new Flow([CORE.clone().add(V(0.7, -0.7, 0.4)), V(16, 11, -7), GW.clone().add(V(0.3, 0.3, 0.3))], 'cmd', 5, 0.3, 0.26);
+const TARGET = { robot:V(B2.x0 + (COLS - 1) * DX + 1.2, 1.5, ROBOT_Z), tech:B3.scb.clone().add(V(0, 0.6, 0)), swap:hotPanel.position.clone().add(V(0, 0.6, 0)) };
+F.act = {};
+for (const k in TARGET) F.act[k] = new Flow(arc(GW, TARGET[k], 6), 'cmd', 4, 0.32, 0.18);
+F.tell = new Flow([CORE.clone().add(V(0.5, 0.3, 0.3)), V(14, 21, -14), PHONE.clone().add(V(-0.8, 0.8, 0))], 'msg', 4, 0.33, 0.26);
+F.ask  = new Flow([PHONE.clone().add(V(0, 2.8, 0)), V(12, 24, -16), CORE.clone().add(V(0, 1.1, 0))], 'msg', 2, 0.25, 0.17);
+/* power flows: DC from each block to its inverter, AC to transformer and grid */
+F.dc = BLOCKS.map(B => new Flow([V(B.x0, 0.35, B.z + 0.2), V(B.x0 + COLS * DX - 1, 0.35, B.z + 0.2), V(B.inv.x, 0.4, B.inv.z)], 'dc', 7, 0.2, 0.1, false));
+F.ac = BLOCKS.map(B => new Flow([V(B.inv.x, 0.4, B.inv.z), V(B.inv.x, 0.35, Math.sign(B.z) * 1.3), V(TX.x - 2, 0.35, Math.sign(B.z) * 0.6), V(TX.x - 1, 0.6, TX.z)], 'ac', 6, 0.18, 0.11, false));
+F.grid = new Flow([V(TX.x + 0.3, 3.1, TX.z), V(TOWER.x, 8.6, TOWER.z), V(TOWER.x + 20, 9.6, TOWER.z)], 'ac', 7, 0.2, 0.12, false);
+
+/* ---------- labels ---------- */
+function addLabel(pos, html, color) {
+  const el = document.createElement('div'); el.className = 'lbl'; el.style.setProperty('--c', color); el.innerHTML = html; overlay.appendChild(el);
+  const L = { el, pos, on:false, base:html, c:color }; labels.push(L); return L;
+}
+for (const k in SENS) { const s = SENS[k]; s.label = addLabel(s.pos.clone().add(V(0, 0.65, 0)), `<i></i><b>${s.name}</b><span>${s.what}</span>`, 'var(--read)'); }
+const part = (pos, name, what, c = 'var(--accent)') => addLabel(pos, `<i></i><b>${name}</b><span>${what}</span>`, c);
+const LB = {
+  gw: part(GW.clone().add(V(0, 0.8, 0)), 'Control room', 'SCADA · sends data out', 'var(--read)'),
+  cloud: part(CLOUD.clone().add(V(1.4, 3, 1.8)), 'Cloud AI', 'Finds lost power', 'var(--ai)'),
+  phone: part(PHONE.clone().add(V(0, 3.2, 0)), 'Plant manager', 'Results + questions', 'var(--msg)'),
+  act: addLabel(V(0, 0, 0), '', 'var(--cmd)'),
+  b1: part(V(BLOCKS[0].x, 2.2, BLOCKS[0].z), 'Block 1', '12 strings', 'var(--cold)'),
+  b2: part(V(BLOCKS[1].x, 2.2, BLOCKS[1].z), 'Block 2', '12 strings', 'var(--cold)'),
+  b3: part(V(BLOCKS[2].x, 2.2, BLOCKS[2].z), 'Block 3', '12 strings', 'var(--cold)'),
+  b4: part(V(BLOCKS[3].x, 2.2, BLOCKS[3].z), 'Block 4', '12 strings', 'var(--cold)'),
+  inv: part(V(B4.inv.x, 2, B4.inv.z), 'Inverters', 'DC to AC', 'var(--warm)'),
+  tx: part(V(TX.x, 3.6, TX.z), 'Transformer', 'Steps voltage up', 'var(--warm)'),
+  tower: part(V(TOWER.x, 11, TOWER.z), 'Grid line', 'Power sold', 'var(--warm)'),
+  robot: part(V(B2.x0 - 1, 1.9, ROBOT_Z), 'Cleaning robot', 'Brushes the rows'),
+};
+const PARTS = ['b1','b2','b3','b4','inv','tx','tower','robot','gw'];
+let showParts = false;
+
+/* ---------- phone ---------- */
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x+r, y); g.arcTo(x+w, y, x+w, y+h, r); g.arcTo(x+w, y+h, x, y+h, r); g.arcTo(x, y+h, x, y, r); g.arcTo(x, y, x+w, y, r); g.closePath(); }
+function wrapText(g, text, x, y, maxW, lh) { let line = ''; for (const w of text.split(' ')) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { g.fillText(line, x, y); line = w; y += lh; } else line = t; } g.fillText(line, x, y); return y; }
+function drawPhone(sc, done) {
+  const g = phoneCv.getContext('2d'), W = 360, m = sc.metric;
+  g.fillStyle = '#f7f5ef'; g.fillRect(0, 0, W, 720);
+  g.fillStyle = '#3d2600'; g.fillRect(0, 0, W, 150);
+  g.fillStyle = '#ffd38a'; g.font = '700 20px Atkinson Hyperlegible, sans-serif'; g.fillText(sc.time, 24, 40);
+  g.fillStyle = '#ffffff'; g.font = '800 30px Sora, sans-serif'; g.fillText('Smart Solar', 24, 100);
+  g.fillStyle = '#ffd38a'; g.font = '400 19px Atkinson Hyperlegible, sans-serif'; g.fillText('628 kWp plant · 4 inverters', 24, 130);
+  rr(g, 18, 172, W - 36, 262, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; rr(g, 38, 194, done ? 140 : 130, 34, 17); g.fill();
+  g.fillStyle = '#ffffff'; g.font = '700 18px Atkinson Hyperlegible, sans-serif'; g.fillText(done ? sc.status[2] : 'Watching', 54, 217);
+  g.fillStyle = '#1f1d17'; g.font = '800 26px Sora, sans-serif'; wrapText(g, done ? sc.phone.title : 'Plant running', 38, 272, W - 76, 32);
+  g.fillStyle = '#68645a'; g.font = '400 20px Atkinson Hyperlegible, sans-serif'; wrapText(g, done ? sc.phone.body : 'The AI is comparing output with sunlight.', 38, 314, W - 76, 27);
+  rr(g, 18, 452, W - 36, 126, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = '#68645a'; g.font = '400 18px Atkinson Hyperlegible, sans-serif'; g.fillText(m.label, 38, 486);
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; g.font = '800 44px Sora, sans-serif'; g.fillText((done ? m.to : m.from) + m.unit, 38, 546);
+  rr(g, 18, 606, W - 36, 70, 35); g.fillStyle = '#3d2600'; g.fill();
+  g.fillStyle = '#ffffff'; g.font = '400 21px Atkinson Hyperlegible, sans-serif'; g.fillText('Ask: "Why was today low?"', 40, 649);
+  phoneTex.needsUpdate = true;
+}
+
+/* ---------- theme ---------- */
+function applyTheme() {
+  const sky = new THREE.Color(css('--sky') || '#e5ecf2');
+  scene.background = sky; scene.fog = new THREE.Fog(sky, 100, 220);
+  groundMat.color.set(css('--ground') || '#b5aa86');
+  const dark = sky.getHSL({}).l < 0.3;
+  hemi.intensity = dark ? 0.55 : 0.75; sun.intensity = dark ? 0.75 : 1.0;
+  const map = { read:css('--read'), cmd:css('--cmd'), msg:css('--msg'), dc:css('--cold'), ac:css('--warm') };
+  flows.forEach(f => f.color(map[f.kind]));
+  for (const k in SENS) SENS[k].glow.material.color.set(map.read);
+  const ai = css('--ai'); coreMat.color.set(ai); core.material.color.set(ai); rings.forEach(r => r.material.color.set(ai));
+}
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+
+/* ---------- state ---------- */
+const thinkEl = $('#think');
+const state = { step:0, t:0, scen:'dust', playing:!reduce, a:0 };
+const clock = new THREE.Clock();
+function applyStep() {
+  const sc = SCEN[state.scen], i = state.step;
+  for (const k in F.sense) F.sense[k].target = i === 0 ? (k === sc.sensor ? 1 : 0.6) : 0;
+  F.send.target = i === 1 ? 1 : 0; F.cmd.target = i === 3 ? 1 : 0;
+  for (const k in F.act) F.act[k].target = (i === 3 && sc.act.includes(k)) ? 1 : 0;
+  F.tell.target = i === 4 ? 1 : 0; F.ask.target = i === 4 ? 0.8 : 0;
+  for (const k in SENS) SENS[k].label.on = i === 0 || (k === sc.sensor && i <= 1);
+  const tgt = TARGET[sc.act[0]]; LB.act.pos = tgt.clone().add(V(0, 0.8, 0)); LB.act.el.innerHTML = `<i></i><b>${sc.actLbl}</b>`; LB.act.act = i === 3;
+  updateLabelVis();
+  drawPhone(sc, i === 4);
+  thinkEl.innerHTML = `<div class="h">Cloud AI is checking options</div><div style="margin-top:4px">${sc.think}</div><ul>${sc.options.map(o => `<li class="${o[2] ? 'y' : 'n'}"><span class="m">${o[2] ? '✓' : '×'}</span><span>${o[0]}</span><span class="s">${o[1]}</span></li>`).join('')}</ul>`;
+  thinkEl.classList.toggle('on', i === 2);
+  $('#capT').textContent = STEPS[i].t; $('#capD').textContent = STEPS[i].d;
+  const ex = [sc.sense, `The control room sends this reading and about 250 others from the whole plant to the cloud at <b>${sc.time}</b>.`, sc.think, sc.actX, `Message to the plant manager: <b>“${sc.phone.title}.”</b> ${sc.phone.body}`][i];
+  $('#capX').innerHTML = `<b>${sc.name}:</b> ` + ex;
+  document.querySelectorAll('.step').forEach((b, k) => { b.setAttribute('aria-current', k === i ? 'step' : 'false'); if (k !== i) b.style.setProperty('--p', k < i ? 1 : 0); });
+  $('#hudScen').textContent = `${sc.name} · ${sc.time}`; $('#hudLbl').textContent = sc.metric.label;
+}
+function updateLabelVis() {
+  const i = state.step;
+  PARTS.forEach(k => LB[k].on = showParts);
+  LB.gw.on = showParts || i === 1; LB.cloud.on = showParts || i === 1 || i === 2 || i === 4; LB.phone.on = showParts || i === 4; LB.act.on = !!LB.act.act;
+}
+function setStep(i) { state.step = i; state.t = 0; applyStep(); }
+function setScen(k) { state.scen = k; state.a = 0; document.querySelectorAll('.scen button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k)); setStep(0); }
+function next() { if (state.step < 4) setStep(state.step + 1); else setScen(ORDER[(ORDER.indexOf(state.scen) + 1) % ORDER.length]); }
+
+const scenBox = $('#scen');
+ORDER.forEach(k => { const sc = SCEN[k], b = document.createElement('button'); b.dataset.k = k;
+  const gain = sc.metric.unit.includes('kW') ? `+${sc.metric.to - sc.metric.from} kW` : `−${sc.metric.from - sc.metric.to} °C`;
+  b.innerHTML = `<span class="d"></span><b>${sc.name}</b><span class="sv">${gain}</span><small>${sc.blurb}</small>`; b.onclick = () => setScen(k); scenBox.appendChild(b); });
+document.querySelectorAll('.step').forEach(b => b.onclick = () => setStep(+b.dataset.i));
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+const playBtn = $('#play');
+const syncPlay = () => { playBtn.innerHTML = state.playing ? ICON_PAUSE : ICON_PLAY; playBtn.setAttribute('aria-label', state.playing ? 'Pause' : 'Play'); };
+playBtn.onclick = () => { state.playing = !state.playing; syncPlay(); }; syncPlay();
+$('#repeat').onclick = () => setStep(state.step);
+$('#next').onclick = next;
+const partsBtn = $('#partsBtn');
+partsBtn.onclick = () => { showParts = !showParts; partsBtn.setAttribute('aria-pressed', showParts); updateLabelVis(); };
+
+let placed = false;
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (!placed) { camera.position.copy(controls.target).add(V(18, 26, 36).setLength(w < 600 ? 88 : 58)); placed = true; }
+  camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+
+/* ---------- loop ---------- */
+const ease = (x) => x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2;
+const tmp = new THREE.Vector3();
+const stepBtns = document.querySelectorAll('.step');
+const dustCol = new THREE.Color(0x9b8a66), baseCol = new THREE.Color(panelBase);
+const techStart = V(CR.x - 1, 0, CR.z + 2.4);
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05), T = clock.elapsedTime, sc = SCEN[state.scen];
+  state.t = Math.min(state.t + dt, DUR);
+  if (state.playing && state.t >= DUR) next();
+  const p = state.t / DUR;
+  stepBtns[state.step].style.setProperty('--p', state.playing ? p : 1);
+  const m = sc.metric;
+  const k = state.step < 3 ? 0 : state.step === 3 ? ease(Math.min(1, p * 1.3)) : 1;
+  $('#hudVal').textContent = Math.round(m.from + (m.to - m.from) * k) + m.unit;
+  $('#hudPlant').textContent = `Whole plant ${Math.round(sc.plant[0] + (sc.plant[1] - sc.plant[0]) * k)} kW of 628 kWp`;
+  const si = state.step < 3 ? 0 : state.step === 3 && p < 0.75 ? 1 : 2;
+  const chip = $('#hudChip'); chip.textContent = sc.status[si]; chip.style.setProperty('--sev', si === 2 ? 'var(--ok)' : 'var(--warn)');
+
+  state.a += ((state.step >= 3 ? 1 : 0) - state.a) * Math.min(1, dt * 1.2);
+  const A = (id) => state.scen === id ? state.a : 0;
+  // dust on block 2 until cleaned; robot runs along the row
+  const dust = state.scen === 'dust' ? 0.55 * (1 - A('dust')) : 0;
+  B2.mat.color.copy(baseCol).lerp(dustCol, dust);
+  const ra = A('dust');
+  const rx = ra > 0.02 ? B2.x0 + (COLS - 1) * DX - ((Math.sin(T * 0.8 - Math.PI / 2) + 1) / 2) * (COLS - 1) * DX : B2.x0 + (COLS - 1) * DX + 1;
+  robot.position.set(rx, 1.22, ROBOT_Z); brush.rotation.y += dt * 20 * ra;
+  mist.p.material.opacity = ra * 0.6;
+  if (ra > 0.02 && !reduce) { for (let i = 0; i < mist.n; i++) { mist.pos[i*3+1] -= dt * 1.2; if (mist.pos[i*3+1] < 0.9) { mist.pos[i*3] = rx - 0.3 + (Math.random()-0.5) * 0.4; mist.pos[i*3+1] = 1.45; mist.pos[i*3+2] = ROBOT_Z + (Math.random()-0.5) * 1.5; } } mist.p.geometry.attributes.position.needsUpdate = true; }
+  // string S7 dark/red until repaired; technician walks there
+  const sf = state.scen === 'string' ? 1 - A('string') : 0;
+  s7Mat.emissive.setRGB(0.55 * sf * (0.6 + 0.4 * Math.sin(T * 5)), 0.05 * sf, 0.02 * sf);
+  s7Mat.color.copy(baseCol).lerp(new THREE.Color(0x2b2b2b), sf * 0.7);
+  const hp = state.scen === 'hot' ? 1 - A('hot') : 0;
+  hotSpot.material.opacity = hp * (0.7 + 0.3 * Math.sin(T * 6));
+  const walking = state.scen === 'string' ? A('string') : state.scen === 'hot' ? A('hot') : 0;
+  tech.visible = walking > 0.02;
+  const tgt = state.scen === 'hot' ? hotPanel.position.clone().add(V(0, -1.05, -1)) : B3.scb.clone().add(V(0.8, -0.8, 0.6));
+  tech.position.copy(techStart).lerp(tgt.setY(0), Math.min(1, walking * 1.15));
+  // drone: thermal sweep over Block 4 in the hotspot story, otherwise hovering near the control room
+  const hd = state.scen === 'hot' && state.step <= 2;
+  const dpos = hd ? V(B4.x + Math.sin(T * 0.7) * 5, 6.5, B4.z + Math.cos(T * 0.5) * 3) : V(17 + Math.sin(T * 0.5), 6 + Math.sin(T * 1.6) * 0.2, -9);
+  drone.position.lerp(dpos, Math.min(1, dt * 2)); SENS.drone.pos.copy(drone.position); SENS.drone.glow.position.copy(drone.position).add(V(0, 0.35, 0));
+  SENS.drone.label.pos.copy(drone.position).add(V(0, 0.9, 0));
+  cone.material.opacity = hd ? 0.18 : 0; props.forEach(pp => pp.rotation.y += dt * 40 * (reduce ? 0 : 1));
+  // inverter LEDs; power flows scale with output
+  BLOCKS.forEach((B, j) => { B.led.material.color.set(Math.sin(T * 4 + j) > -0.6 ? 0x3fd17a : 0x1c5a34); });
+  F.dc.forEach((f, j) => { f.target = 0.85; f.rate = j === 1 ? 1 - dust * 0.5 : j === 2 ? 1 - sf * 0.3 : 1; });
+  F.ac.forEach(f => f.target = 0.85); F.grid.target = 0.9;
+  meterScr.material.color.set(sc.sensor === 'meter' && state.step === 0 && Math.sin(T * 6) > 0 ? 0xffc04d : 0x26c2ff);
+  if (!reduce) cups.rotation.y += dt * 3;
+  for (const key in SENS) { const s = SENS[key], hot = key === sc.sensor;
+    s.glow.scale.setScalar(hot && state.step <= 1 ? 0.85 + 0.25 * Math.sin(T * 5) : state.step === 0 ? 0.55 + 0.2 * Math.sin(T * 6 + s.pos.x) : 0.35); }
+  gwLed.material.color.set((state.step === 1 || state.step === 3) && Math.sin(T * 14) > 0 ? 0x26c2ff : 0x1d4050);
+  const thinking = state.step === 2, spin = reduce ? 0 : 1;
+  core.rotation.y += dt * (thinking ? 2.2 : 0.4) * spin; core.rotation.x += dt * (thinking ? 1.1 : 0.2) * spin;
+  coreIn.scale.setScalar(1 + (thinking ? 0.18 * Math.sin(T * 8) : 0));
+  rings.forEach((r, j) => { const q = (T * 0.7 + j / 3) % 1; r.scale.setScalar(1 + q * 2.2); r.material.opacity = thinking ? (1 - q) * 0.8 : 0; r.lookAt(camera.position); });
+  phone.position.y = PHONE.y + (reduce ? 0 : Math.sin(T * 1.4) * 0.18);
+  phone.lookAt(tmp.copy(camera.position).setY(phone.position.y + 1));
+  phone.scale.setScalar(state.step === 4 ? 1.08 : 1);
+
+  flows.forEach(f => f.update(dt));
+  controls.update();
+  renderer.render(scene, camera);
+
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const L of labels) {
+    tmp.copy(L.pos).project(camera);
+    const vis = L.on && tmp.z < 1 && Math.abs(tmp.x) < 1.1 && Math.abs(tmp.y) < 1.1;
+    L.el.classList.toggle('on', vis);
+    if (!vis) continue;
+    const hw = L.el.offsetWidth / 2 + 6, px = Math.max(hw, Math.min(w - hw, (tmp.x + 1) / 2 * w));
+    L.el.style.transform = `translate(${px.toFixed(1)}px, ${((1 - tmp.y) / 2 * h).toFixed(1)}px) translate(-50%, calc(-100% - 8px))`;
+  }
+  requestAnimationFrame(frame);
+}
+setScen('dust');
+frame();
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Options by Domain</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cyan:#38E1FF; --teal:#2DD4BF; --bg:#070B12; --bg2:#0A0F1A;
+    --text:#DCE6F2; --muted:#A0D8FF; --line:rgba(56,225,255,0.2); --amber:#FFB454;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:'Space Grotesk',sans-serif;
+    background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 100%);
+    color:var(--text); min-height:100vh; display:flex; flex-direction:column;
+  }
+  .header{
+    text-align:center; padding:48px 24px 28px; position:relative;
+    border-bottom:1px solid var(--line); background:rgba(10,15,26,0.8);
+  }
+  .brand{
+    font-size:2.4rem; font-weight:700;
+    background:linear-gradient(90deg,var(--cyan),var(--teal));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    letter-spacing:-0.02em;
+  }
+  .suite{ font-size:1.5rem; color:var(--cyan); margin-top:6px; }
+  .tagline{ color:var(--muted); margin-top:8px; font-size:1.02rem; max-width:780px; margin-left:auto; margin-right:auto; line-height:1.6;}
+  .back{ position:absolute; top:24px; left:24px; color:var(--cyan); text-decoration:none; font-size:0.9rem;
+    border:1px solid var(--cyan); padding:7px 14px; border-radius:6px; transition:.25s;}
+  .back:hover{ background:var(--cyan); color:var(--bg); }
+
+  .wrap{ flex:1; max-width:1000px; margin:0 auto; padding:36px 28px 50px; width:100%; }
+
+  .domains-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:18px; }
+  .dcard{
+    background:linear-gradient(135deg,rgba(56,225,255,0.06),rgba(45,212,191,0.03));
+    border:1px solid var(--line); border-radius:13px; padding:22px; transition:.25s;
+    border-top:3px solid var(--accent);
+  }
+  .dcard:hover{ border-color:var(--accent); box-shadow:0 0 18px rgba(56,225,255,0.14); transform:translateY(-3px); }
+  .dcard-head{ display:flex; align-items:center; gap:11px; margin-bottom:14px; }
+  .dcard-ico{ font-size:1.7rem; }
+  .dcard-name{ font-size:1.15rem; font-weight:600; color:var(--accent); }
+
+  .role{ padding:10px 0; border-top:1px solid rgba(56,225,255,0.10); }
+  .role:first-of-type{ border-top:none; }
+  .role-name{ color:var(--text); font-weight:600; font-size:0.97rem; }
+  .role-desc{ color:var(--muted); font-size:0.86rem; margin-top:2px; line-height:1.45; }
+
+  .program-intro{
+    margin:0 0 26px; padding:24px 26px; border-radius:13px; text-align:center;
+    background:linear-gradient(135deg,rgba(56,225,255,0.13),rgba(45,212,191,0.06));
+    border:1px solid rgba(56,225,255,0.45); box-shadow:0 0 22px rgba(56,225,255,0.10);
+  }
+  .program-intro .pi-title{ color:var(--cyan); font-size:1.3rem; font-weight:700; margin-bottom:8px; }
+  .program-intro p{ color:var(--muted); font-size:0.98rem; line-height:1.6; max-width:760px; margin:0 auto; }
+  .program-intro strong{ color:var(--text); }
+
+  .note{
+    margin-top:28px; padding:18px 22px; border-radius:12px; text-align:center;
+    background:linear-gradient(135deg,rgba(56,225,255,0.10),rgba(45,212,191,0.05));
+    border:1px solid rgba(56,225,255,0.35); color:var(--text); line-height:1.6; font-size:0.95rem;
+  }
+  .note strong{ color:var(--cyan); }
+
+  /* Internship opportunity */
+  .intern{
+    margin-top:30px; padding:28px 26px; border-radius:14px;
+    background:linear-gradient(135deg, rgba(255,180,84,0.14), rgba(255,180,84,0.05));
+    border:1px solid rgba(255,180,84,0.5); box-shadow:0 0 22px rgba(255,180,84,0.12);
+  }
+  .intern-tag{
+    display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:0.72rem;
+    letter-spacing:.1em; text-transform:uppercase; color:#FFB454;
+    border:1px solid rgba(255,180,84,0.5); border-radius:20px; padding:4px 13px; margin-bottom:12px;
+  }
+  .intern h2{ color:#FFD9A0; font-size:1.5rem; margin-bottom:8px; }
+  .intern-lead{ color:var(--muted); font-size:0.98rem; line-height:1.6; margin-bottom:18px; max-width:720px; }
+  .intern-points{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-bottom:20px; }
+  .ipoint{ background:rgba(10,15,26,0.45); border:1px solid rgba(255,180,84,0.3); border-radius:10px; padding:16px; }
+  .ipoint .ip-ico{ font-size:1.6rem; margin-bottom:8px; }
+  .ipoint .ip-title{ color:#FFD9A0; font-weight:600; font-size:1rem; margin-bottom:4px; }
+  .ipoint .ip-desc{ color:var(--muted); font-size:0.9rem; line-height:1.5; }
+  .intern-cta{ display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .apply-btn{
+    display:inline-block; text-decoration:none; font-weight:700; color:#070B12;
+    background:linear-gradient(135deg,#FFB454,#FFD9A0); padding:12px 26px; border-radius:8px; transition:.25s;
+  }
+  .apply-btn:hover{ box-shadow:0 0 18px rgba(255,180,84,0.45); transform:translateY(-2px); }
+  .intern-contact{ color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:0.86rem; }
+
+  .footer{ border-top:1px solid var(--line); background:rgba(10,15,26,0.95); padding:28px 24px; text-align:center; color:var(--muted); font-size:0.88rem;}
+  .footer .name{ color:var(--cyan); font-weight:600; }
+  .footer a{ color:var(--cyan); text-decoration:none; } .footer a:hover{ text-decoration:underline; }
+
+  @media (max-width:600px){
+    .brand{font-size:1.8rem;} .suite{font-size:1.2rem;}
+    .back{ position:static; display:inline-block; margin-bottom:14px;}
+    .header{ padding:24px 16px;} .wrap{ padding:26px 16px 40px; }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="suite">Career Options by Domain</div>
+    <div class="tagline">Our training program prepares you for real, in-demand careers across every domain below — from core systems to production-grade AI, described in plain language.</div>
+  </div>
+
+  <div class="wrap">
+    <div class="program-intro">
+      <div class="pi-title">🎓 One Training Program — Every Career Path</div>
+      <p>Every role below is within your reach. The <strong>AI training program</strong> is built to take you across all of these domains — from core systems and networking to production-grade AI — through hands-on projects and expert mentorship. Wherever you want to go, this is where you start.</p>
+    </div>
+    <div class="domains-grid" id="grid"></div>
+
+    <div class="note">
+      🔄 <strong>Skills travel well.</strong> Many of these roles share the same foundations, so what you learn in one domain
+      often transfers to another. Start with what excites you — the doors connect.
+    </div>
+
+    <!-- Internship opportunity -->
+    <div class="intern">
+      <span class="intern-tag">★ Internship Opportunity</span>
+      <h2>Get Real Experience With Us</h2>
+      <p class="intern-lead">Go beyond theory. Our internship places you alongside seasoned engineers, working on systems that are live in the real world.</p>
+      <div class="intern-points">
+        <div class="ipoint">
+          <div class="ip-ico">👨‍🏫</div>
+          <div class="ip-title">Mentored by 25+ years of experience</div>
+          <div class="ip-desc">Work directly with faculty who bring over 25 years of hands-on software development experience.</div>
+        </div>
+        <div class="ipoint">
+          <div class="ip-ico">🐅</div>
+          <div class="ip-title">Build a production-grade AI system</div>
+          <div class="ip-desc">Contribute to a live AI deployment — Wildlife Surveillance for the Government of Maharashtra.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+const T={cyan:'#38E1FF',teal:'#2DD4BF'};
+const domains=[
+  {icon:'🤖',name:'AI & Machine Learning',accent:T.cyan,roles:[
+    {n:'Machine Learning Engineer',d:'Builds and deploys models that learn from data.'},
+    {n:'Data Scientist',d:'Finds patterns and makes predictions to guide decisions.'},
+    {n:'AI Systems Architect',d:'Designs how AI models, data and services fit together into reliable, large-scale systems.'},
+    {n:'AI Research Engineer',d:'Develops new AI methods and pushes the field forward.'}
+  ]},
+  {icon:'🐧',name:'Core Systems & Networking',accent:T.teal,roles:[
+    {n:'Linux Systems Engineer',d:'Manages Linux servers and writes low-level systems and network software (Linux, systems &amp; network programming).'},
+    {n:'Systems Programmer',d:'Builds software that runs close to the hardware and operating system, usually in C/C++.'},
+    {n:'Network Engineer',d:'Designs, configures and keeps computer networks running reliably.'},
+    {n:'Systems Administrator',d:'Keeps servers, users and infrastructure running smoothly day to day.'}
+  ]},
+  {icon:'⚙️',name:'Kernel Programming',accent:T.cyan,roles:[
+    {n:'Kernel Developer',d:'Designs and maintains the core code at the heart of the operating system.'},
+    {n:'Device Driver Developer',d:'Writes the software that lets the operating system communicate with hardware.'},
+    {n:'Storage & Replication Module Developer',d:'Builds in-kernel modules for storage and data replication (e.g. Veritas VVR).'},
+    {n:'Filesystem Developer',d:'Develops the in-kernel filesystems that store and organize data.'}
+  ]},
+  {icon:'🛡️',name:'Cybersecurity',accent:T.cyan,roles:[
+    {n:'Security Analyst',d:'Monitors systems and responds to threats and attacks.'},
+    {n:'Ethical Hacker / Penetration Tester',d:'Legally breaks into systems to find weaknesses before criminals do.'},
+    {n:'Security Engineer',d:'Builds defenses like firewalls, encryption and access controls.'}
+  ]},
+  {icon:'☁️',name:'Edge / Cloud Computing',accent:T.teal,roles:[
+    {n:'Cloud Engineer',d:'Designs and runs applications on AWS, Azure or Google Cloud.'},
+    {n:'DevOps Engineer',d:'Automates building, testing and releasing software reliably.'},
+    {n:'Solutions Architect',d:'Designs the overall blueprint of large cloud systems.'}
+  ]},
+  {icon:'🔗',name:'Distributed Systems',accent:T.cyan,roles:[
+    {n:'Backend Engineer',d:'Builds the server-side logic that powers apps and websites.'},
+    {n:'Site Reliability Engineer (SRE)',d:'Keeps large-scale services fast, stable and always available.'},
+    {n:'Systems Architect',d:'Designs how many machines work together as one system.'}
+  ]},
+  {icon:'📊',name:'Big Data',accent:T.teal,roles:[
+    {n:'Data Engineer',d:'Builds pipelines that collect, move and clean huge datasets.'},
+    {n:'Data Analyst',d:'Turns raw data into clear insights, charts and reports.'},
+    {n:'Database Administrator',d:'Manages, tunes and secures the databases behind everything.'}
+  ]},
+  {icon:'📡',name:'IoT (Internet of Things)',accent:T.teal,roles:[
+    {n:'Embedded Systems Engineer',d:'Programs the chips inside devices and machines.'},
+    {n:'IoT Developer',d:'Connects smart devices and their data to the cloud.'},
+    {n:'Firmware Engineer',d:'Writes the low-level software that runs on hardware.'}
+  ]},
+  {icon:'⛓️',name:'Blockchain',accent:T.cyan,roles:[
+    {n:'Blockchain Developer',d:'Builds secure, decentralized applications.'},
+    {n:'Smart Contract Engineer',d:'Writes self-executing agreements in code.'},
+    {n:'Web3 Developer',d:'Builds apps for the decentralized, user-owned web.'}
+  ]}
+];
+const grid=document.getElementById('grid');
+domains.forEach(d=>{
+  const c=document.createElement('div');
+  c.className='dcard'; c.style.setProperty('--accent',d.accent);
+  c.innerHTML=`
+    <div class="dcard-head"><span class="dcard-ico">${d.icon}</span><span class="dcard-name">${d.name}</span></div>
+    ${d.roles.map(r=>`<div class="role"><div class="role-name">${r.n}</div><div class="role-desc">${r.d}</div></div>`).join('')}`;
+  grid.appendChild(c);
+});
+</script>
+</body>
+</html>

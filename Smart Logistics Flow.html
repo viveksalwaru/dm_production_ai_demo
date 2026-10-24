@@ -1,0 +1,697 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Smart Logistics Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a 3D fulfilment centre (racks, robots, conveyor, docks) on one stage, a step rail, the caption, then the parts and the ways AI helps. */
+:root{
+  --bg:#f4f3f0; --surface:#ffffff; --ink:#1c1b19; --muted:#636058; --line:#e2dfd8;
+  --accent:#d4511a; --accent-ink:#ffffff;
+  --read:#0f9bd7; --cmd:#1fae55; --msg:#d83a83; --ai:#6a55e6; --warn:#d9861a; --ok:#14894f;
+  --p1:#c89b62; --p2:#f28c28; --p3:#3d7be0;
+  --sky:#e7eaee; --ground:#9aa48a;
+  --font-display:"Barlow Condensed", "Segoe UI", system-ui, sans-serif;
+  --font-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121110; --surface:#1b1a18; --ink:#efede8; --muted:#a29e95; --line:#2f2d29;
+  --accent:#ff7a3d; --accent-ink:#1c0a02;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --p1:#d9ae74; --p2:#ff9d45; --p3:#6aa2ff;
+  --sky:#0c0f12; --ground:#1f241c; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#121110; --surface:#1b1a18; --ink:#efede8; --muted:#a29e95; --line:#2f2d29;
+  --accent:#ff7a3d; --accent-ink:#1c0a02;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --p1:#d9ae74; --p2:#ff9d45; --p3:#6aa2ff;
+  --sky:#0c0f12; --ground:#1f241c; color-scheme:dark }
+
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:18px}
+header{display:grid;gap:6px;max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.4vw,44px);line-height:1.06;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:0;font-size:17px}
+
+.stage{position:relative;height:clamp(460px,66vh,700px);border-radius:18px;overflow:hidden;background:var(--sky);border:1px solid var(--line);touch-action:none}
+.stage canvas{display:block;width:100%;height:100%;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;white-space:nowrap;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:5px 9px 5px 8px;font-size:12.5px;line-height:1.25;box-shadow:0 4px 14px rgba(0,0,0,.12);opacity:0;transition:opacity .45s;display:flex;gap:7px;align-items:center}
+.lbl.on{opacity:1}
+.lbl i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c,var(--read))}
+.lbl b{font-weight:700}
+.lbl span{color:var(--muted)}
+.lbl em{font-style:normal;font-weight:700;color:var(--c,var(--read));font-variant-numeric:tabular-nums}
+.lbl::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+
+.hud{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:grid;gap:2px;min-width:190px;box-shadow:0 6px 18px rgba(0,0,0,.1)}
+.hud .sc{font-size:12px;color:var(--muted)}
+.hud .mv{font-family:var(--font-display);font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.hud .ml{font-size:12px;color:var(--muted)}
+.hud .cf{font-size:12px;color:var(--ok);font-weight:700}
+.chip{justify-self:start;margin-top:4px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--sev) 16%,transparent);color:var(--sev)}
+.think{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:12px;width:min(320px,calc(100% - 24px));background:var(--surface);border:1px solid var(--ai);border-radius:14px;padding:12px 14px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.12);opacity:0;transform:translateY(-6px);transition:opacity .4s,transform .4s;pointer-events:none}
+.think.on{opacity:1;transform:none}
+.think .h{font-weight:700;color:var(--ai);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.think ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.think li{display:grid;grid-template-columns:18px 1fr auto;gap:6px;align-items:start;font-size:13px}
+.think li .m{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px}
+.think li.y .m{background:var(--ok)}
+.think li.n .m{background:var(--muted)}
+.think li.n{color:var(--muted)}
+.think li .s{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ok)}
+.think li.n .s{color:var(--muted);font-weight:400}
+.legend{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;right:12px;display:flex;gap:6px 12px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 24px);background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:12px}
+.legend span{display:flex;gap:6px;align-items:center}
+.legend i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.legend i.p{border-radius:2px;height:5px;width:14px}
+.parts-btn{all:unset;cursor:pointer;position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;display:flex;gap:7px;align-items:center}
+.parts-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.parts-btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.rail{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
+.step{all:unset;cursor:pointer;position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.step:focus-visible,.ctl:focus-visible,.scen button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.step .n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.step .t{font-family:var(--font-display);font-weight:800;font-size:16px}
+.step .bar{position:absolute;left:0;bottom:0;height:3px;width:calc(var(--p,0)*100%);background:var(--accent)}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ctrls{display:flex;gap:8px}
+.ctl{all:unset;cursor:pointer;display:grid;place-items:center;width:52px;min-height:52px;border-radius:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-sizing:border-box}
+.ctl:hover{border-color:var(--accent)}
+.ctl svg{width:20px;height:20px}
+.ctl.next{width:auto;padding:0 16px;grid-auto-flow:column;gap:6px;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0}
+
+.below{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px}
+.caption{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:grid;gap:8px;align-content:start}
+.caption h2{font-family:var(--font-display);font-size:24px;line-height:1.15;margin:0;text-wrap:balance}
+.caption p{margin:0;max-width:62ch}
+.caption .ex{border-top:1px dashed var(--line);padding-top:10px}
+.caption .ex b{color:var(--accent)}
+.side{display:grid;gap:10px;align-content:start}
+.side h3{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.scen{display:grid;gap:8px}
+.scen button{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.scen button .d{grid-row:span 2;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.scen button b{font-weight:700}
+.scen button small{color:var(--muted);font-size:13px;grid-column:2}
+.scen button .sv{grid-row:1/span 2;grid-column:3;font-weight:700;color:var(--ok);font-size:13px;font-variant-numeric:tabular-nums}
+.scen button[aria-pressed="true"]{border-color:var(--accent)}
+.scen button[aria-pressed="true"] .d{background:var(--accent)}
+
+.sec{display:grid;gap:12px;margin-top:10px}
+.sec h2{font-family:var(--font-display);font-size:22px;margin:0}
+.sec .sub{margin:0;color:var(--muted);max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.part{border-top:3px solid var(--c);background:var(--surface);border-radius:4px 4px 14px 14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.part b{font-family:var(--font-display);font-size:17px}
+.part p{margin:0;color:var(--muted);font-size:14.5px}
+.part ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.lever{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.lever b{font-family:var(--font-display);font-size:16.5px}
+.lever p{margin:0;color:var(--muted);font-size:14.5px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.fallback{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+@media (max-width:760px){
+  .rail{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .ctrls{grid-column:1/-1}
+  .ctrls>button{flex:1;min-height:44px}
+  .step{padding:8px 6px;text-align:center}
+  .step .t{font-size:13px}
+  .below{grid-template-columns:minmax(0,1fr)}
+  .stage{height:520px}
+  .hud{min-width:0;padding:8px 11px}
+  .hud .mv{font-size:22px}
+  .legend{font-size:11px;gap:4px 8px;bottom:52px}
+  .lbl{font-size:11px;padding:4px 7px}
+  .lbl span{display:none}
+  .think{top:auto;bottom:52px}
+}
+@media (prefers-reduced-motion: reduce){.lbl,.think{transition:none}}
+
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Smart Logistics</div>
+    <h1>How AI helps a warehouse get your online order out on time</h1>
+    <p class="lede">When you order something online, it is picked from a shelf in a huge warehouse, packed in a box, carried on a moving belt and loaded onto a truck. Pick a problem below to see how the AI spots it and fixes it. Drag to turn the 3D view.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of a warehouse with racks, orange mobile robots, a conveyor carrying boxes, packing stations, loading docks with trucks, a control room, a cloud AI and a phone"></canvas>
+    <div class="overlay" id="overlay"></div>
+    <div class="hud" aria-live="polite">
+      <div class="sc" id="hudScen"></div>
+      <div class="mv" id="hudVal"></div>
+      <div class="ml" id="hudLbl"></div>
+      <div class="chip" id="hudChip"></div>
+      <div class="cf" id="hudNote"></div>
+    </div>
+    <div class="think" id="think"></div>
+    <div class="legend" aria-label="Colours">
+      <span style="--c:var(--read)"><i></i>Readings</span>
+      <span style="--c:var(--cmd)"><i></i>Instructions</span>
+      <span style="--c:var(--msg)"><i></i>Messages</span>
+      
+    </div>
+    <button class="parts-btn" id="partsBtn" aria-pressed="false">Label all parts</button>
+  </div>
+
+  <nav class="rail" aria-label="Steps">
+    <button class="step" data-i="0"><span class="n">Step 1</span><span class="t">Sense</span><span class="bar"></span></button><button class="step" data-i="1"><span class="n">Step 2</span><span class="t">Send</span><span class="bar"></span></button><button class="step" data-i="2"><span class="n">Step 3</span><span class="t">Think</span><span class="bar"></span></button><button class="step" data-i="3"><span class="n">Step 4</span><span class="t">Act</span><span class="bar"></span></button><button class="step" data-i="4"><span class="n">Step 5</span><span class="t">Tell you</span><span class="bar"></span></button>
+    <div class="ctrls">
+      <button class="ctl" id="repeat" aria-label="Repeat this step" title="Repeat this step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+      <button class="ctl" id="play" aria-label="Pause" title="Play / pause"></button>
+      <button class="ctl next" id="next" aria-label="Next step">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </nav>
+
+  <section class="below">
+    <article class="caption" aria-live="polite">
+      <h2 id="capT"></h2>
+      <p id="capD"></p>
+      <p class="ex" id="capX"></p>
+    </article>
+    <aside class="side">
+      <h3>Pick a situation</h3>
+      <div class="scen" id="scen"></div>
+    </aside>
+  </section>
+
+  <section class="sec">
+    <h2>The main parts, in plain words</h2>
+    <div class="grid">
+      <div class="part" style="--c:var(--p1)"><b>Shelves (racks)</b><p>Tall metal shelves full of products. A computer system (called a WMS) remembers exactly which shelf holds each item.</p></div><div class="part" style="--c:var(--p2)"><b>Little robots (AMRs)</b><p>Small orange robots that drive around carrying boxes from the shelves to the packing tables, so people walk less.</p></div><div class="part" style="--c:var(--accent)"><b>Packing tables</b><p>Workers put each order into a box and stick on the address label.</p></div><div class="part" style="--c:var(--p3)"><b>Moving belt (conveyor)</b><p>Carries packed boxes across the building to the right truck, like an airport baggage belt.</p></div><div class="part" style="--c:var(--read)"><b>Cameras and scanners</b><p>Watch the belt for jams, read the barcode on every box and check what goes into each truck.</p></div><div class="part" style="--c:var(--p3)"><b>Loading doors and trucks</b><p>Trucks back up to doors on the side of the building. Boxes are loaded and driven to customers.</p></div><div class="part" style="--c:var(--read)"><b>Control tower</b><p>The warehouse’s main computer. It runs the robots and belts and sends all data to the cloud.</p></div><div class="part" style="--c:var(--ai)"><b>Cloud AI</b><p>The “planner”. It watches everything at once and keeps changing the plan so orders go out faster and cheaper.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>The three situations, explained simply</h2>
+    <p class="sub">No logistics knowledge needed. Each card says what is going on, what usually happens without AI, and what the AI does differently.</p>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <div class="part" style="--c:var(--p2)"><b>1. Sudden rush of orders</b>
+        <p><strong style="color:var(--ink)">What’s going on:</strong> A sale starts and orders triple. Almost everyone buys the same few items, but those items are on the far shelves.</p>
+        <p><strong style="color:var(--ink)">Without AI:</strong> Workers keep walking long distances. The manager notices too late and calls in extra staff, which costs money and takes hours.</p>
+        <p><strong style="color:var(--ink)">With AI:</strong> It spots the popular items within minutes, moves them next to the packing tables, and puts every robot to work on them.</p>
+        <p><strong style="color:var(--ink)">The number:</strong> orders sent per hour go from 820 to 1,150, so the day’s orders still leave by 4 PM.</p></div>
+      <div class="part" style="--c:var(--p3)"><b>2. Belt blocked</b>
+        <p><strong style="color:var(--ink)">What’s going on:</strong> One oversized box gets stuck on the moving belt. Every box behind it stops.</p>
+        <p><strong style="color:var(--ink)">Without AI:</strong> Someone has to notice the pile, walk over, find the cause and fix it. Meanwhile hundreds of boxes miss their truck.</p>
+        <p><strong style="color:var(--ink)">With AI:</strong> The camera sees the pile in seconds. The AI sends the boxes along a spare belt and sends the technician a photo of the stuck box.</p>
+        <p><strong style="color:var(--ink)">The number:</strong> boxes running late drop from 300 an hour to 20.</p></div>
+      <div class="part" style="--c:var(--p1)"><b>3. Trucks leaving half-empty</b>
+        <p><strong style="color:var(--ink)">What’s going on:</strong> Boxes are put into trucks in whatever order they arrive, leaving gaps, like a badly packed suitcase.</p>
+        <p><strong style="color:var(--ink)">Without AI:</strong> Trucks leave only about 60 % full, so more trucks (and more money) are needed every night.</p>
+        <p><strong style="color:var(--ink)">With AI:</strong> It works out where each box should go to fill the space, and shows the loaders on their handheld screens.</p>
+        <p><strong style="color:var(--ink)">The number:</strong> the truck goes from 62 % to 91 % full, so one truck fewer is needed tonight, saving about ₹18,000.</p></div>
+    </div>
+  </section>
+  <section class="sec">
+    <h2>So what exactly is the AI doing?</h2>
+    <p class="sub">In all three situations the AI does the same four things a very good manager would do, but in seconds, all day, without getting tired.</p>
+    <div class="grid">
+      <div class="lever"><b>1. Notices</b><p>It watches orders, shelves, robots, cameras and trucks at the same time, and sees a problem the moment it starts.</p></div>
+      <div class="lever"><b>2. Understands why</b><p>It finds the cause: popular items on far shelves, one stuck box, gaps inside the truck.</p></div>
+      <div class="lever"><b>3. Compares options</b><p>It tries several fixes in its “head” and picks the one that saves the most time and money, rejecting slow or costly ones.</p></div>
+      <div class="lever"><b>4. Acts and reports</b><p>It sends new instructions to robots, belts and workers, then tells the manager what it did. People can always say no.</p></div>
+    </div>
+  </section>
+  <section class="sec">
+    <h2>Other everyday jobs the AI helps with</h2>
+    <p class="sub">Beyond the three situations above, the same AI quietly improves the warehouse all day.</p>
+    <div class="grid">
+      <div class="lever"><b>Keep popular items close</b><p>Items that sell a lot are always kept near the packing tables.</p></div><div class="lever"><b>Group similar orders</b><p>One trip to the shelves collects items for many orders at once.</p></div><div class="lever"><b>Send robots where they are needed</b><p>Robots go wherever the work is, not on a fixed route.</p></div><div class="lever"><b>Spot problems in seconds</b><p>Cameras notice jams and broken equipment before trucks are late.</p></div><div class="lever"><b>Fill every truck</b><p>Packing plans fit more boxes, so fewer trucks are needed.</p></div><div class="lever"><b>Guess tomorrow’s workload</b><p>Predicts how many orders will come, so the right number of people are called in.</p></div>
+    </div>
+    <p class="note">All numbers in this demo are examples for one mid-size fulfilment centre.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $ = (s) => document.querySelector(s);
+const stage = $('#stage'), overlay = $('#overlay'), canvas = $('#c');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const DUR = 7;
+const fmt = (m, v) => (m.prefix || '') + (m.dec ? v.toFixed(m.dec) : Math.round(v).toLocaleString('en-IN')) + m.unit;
+
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias:true }); }
+catch(e){ stage.insertAdjacentHTML('beforeend','<div class="fallback">This browser could not start the 3D view. The steps below still explain each stage.</div>'); }
+if (!renderer) return;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
+const flows = [], labels = [];
+const V = (x,y,z) => new THREE.Vector3(x,y,z);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.enablePan = false;
+controls.minDistance = 18; controls.maxDistance = 150; controls.maxPolarAngle = 1.48;
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a9a7a, 0.75); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 0.95);
+sun.position.set(20, 40, 24); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-44, right:44, top:44, bottom:-44, near:1, far:140 });
+scene.add(sun);
+
+const std = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness:0.8, metalness:0.05 }, o));
+const mesh = (geo, mat, x=0, y=0, z=0, parent=scene) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+const box = (w, h, d, color, x, y, z, parent) => mesh(new THREE.BoxGeometry(w, h, d), typeof color === 'number' ? std(color) : color, x, y, z, parent);
+const sphere = new THREE.SphereGeometry(1, 14, 10);
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.35,'rgba(255,255,255,.8)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+function particles(n, color, size, spawn) {
+  const geo = new THREE.BufferGeometry(); const pos = new Float32Array(n*3);
+  for (let i = 0; i < n; i++) spawn(pos, i, true);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color, size, map:dotTex, transparent:true, opacity:0, depthWrite:false });
+  const p = new THREE.Points(geo, mat); scene.add(p); return { p, pos, n, spawn };
+}
+const flat = (w, d, color, x, z, y = 0.02) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), typeof color === 'number' ? std(color, { roughness:1 }) : color); m.rotation.x = -Math.PI/2; m.position.set(x, y, z); m.receiveShadow = true; scene.add(m); return m; };
+const curve = (pts, closed = false) => new THREE.CatmullRomCurve3(pts, closed, 'centripetal');
+function person(shirt, x = 0, z = 0) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+  mesh(new THREE.CylinderGeometry(0.22, 0.25, 1, 10), std(shirt), 0, 0.65, 0, g);
+  mesh(sphere, std(0xe0b48f), 0, 1.35, 0, g).scale.setScalar(0.18);
+  return g;
+}
+function truck(color = 0x2f6fb3, trailer = 0xeef0f1, len = 6) {
+  const g = new THREE.Group(); scene.add(g);
+  box(len, 2.2, 2.2, trailer, -len / 2 - 0.2, 1.5, 0, g);
+  box(1.6, 1.8, 2.1, color, 0.9, 1.3, 0, g);
+  box(0.05, 0.7, 1.7, 0x203040, 1.72, 1.65, 0, g);
+  for (const x of [-len + 0.6, -len + 1.6, 0.9]) for (const z of [-0.95, 0.95]) mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.3, 14), std(0x222222), x, 0.4, z, g).rotation.x = Math.PI/2;
+  return g;
+}
+
+class Flow {
+  constructor(pts, kind, n = 4, speed = 0.32, size = 0.2, line = true) {
+    this.curve = curve(pts);
+    this.kind = kind; this.speed = speed; this.on = 0; this.target = 0; this.off = Math.random(); this.rate = 1;
+    this.lineMat = new THREE.LineDashedMaterial({ color:0xffffff, dashSize:0.35, gapSize:0.28, transparent:true, opacity:0, depthWrite:false });
+    this.line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(this.curve.getPoints(100)), this.lineMat);
+    this.line.computeLineDistances(); this.hasLine = line; if (line) scene.add(this.line);
+    this.dots = [];
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 8), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0 }));
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0xffffff, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }));
+      g.scale.setScalar(size * 5); m.add(g); scene.add(m); this.dots.push({ m, g });
+    }
+    flows.push(this);
+  }
+  color(c) { this.lineMat.color.set(c); this.dots.forEach(d => { d.m.material.color.set(c); d.g.material.color.set(c); }); }
+  update(dt) {
+    this.on += (this.target - this.on) * Math.min(1, dt * 3.5);
+    if (!reduce) this.off = (this.off + dt * this.speed * this.rate) % 1;
+    const vis = this.on > 0.01;
+    this.line.visible = vis && this.hasLine; this.lineMat.opacity = this.on * 0.6;
+    this.dots.forEach((d, i) => { d.m.visible = vis; if (!vis) return;
+      const t = (this.off + i / this.dots.length) % 1; d.m.position.copy(this.curve.getPointAt(t));
+      const edge = Math.min(1, t * 8, (1 - t) * 8); d.m.material.opacity = this.on * edge; d.g.material.opacity = this.on * edge * 0.55; });
+  }
+}
+/* things that move along a path (robots, boxes, trucks) */
+class Mover {
+  constructor(obj, path, speed, offset = 0, face = true) { this.obj = obj; this.path = path; this.speed = speed; this.t = offset; this.face = face; this.rate = 1; movers.push(this); }
+  update(dt) {
+    if (!reduce) this.t = (this.t + dt * this.speed * this.rate) % 1;
+    const p = this.path.getPointAt(this.t); this.obj.position.x = p.x; this.obj.position.z = p.z; if (this.yFromPath) this.obj.position.y = p.y;
+    if (this.face) { const q = this.path.getPointAt((this.t + 0.002) % 1); this.obj.rotation.y = Math.atan2(-(q.z - p.z), q.x - p.x); }
+  }
+}
+const movers = [];
+const groundMat = std(0x8fa27a, { roughness:1 });
+const ground = new THREE.Mesh(new THREE.CircleGeometry(150, 48), groundMat); ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+
+const FONT_NAME = 'Barlow Condensed';
+
+const STEPS = [
+  { t:'The warehouse keeps an eye on everything', d:'Think of a giant shop’s back room. Computers know every order that comes in and every shelf where items sit. Little robots report where they are. Cameras watch the moving belt, and scanners check every box loaded onto a truck.' },
+  { t:'All that information goes to the cloud', d:'The warehouse’s main computer (the “control tower”) sends everything it sees to the AI in the cloud every few seconds. If the internet drops, the robots and belts keep working safely.' },
+  { t:'The AI works out the best plan', d:'A manager would need hours with spreadsheets to spot the problem and re-plan. The AI does it in seconds: it sees what is going wrong, tries a few fixes, and picks the one that saves the most time and money.' },
+  { t:'Robots, belts and people follow the new plan', d:'The robots get new jobs, the belt switches path, and workers’ handheld scanners show new instructions. Nobody has to stop and re-plan by hand.' },
+  { t:'The manager sees what happened', d:'The shift manager gets a short message on the phone: what went wrong, what the AI changed, and the result. They can ask questions in plain words.' },
+];
+const SCEN = {
+  surge: { name:'Sudden rush of orders', time:'11:00 AM', blurb:'A sale starts and orders triple', sensor:'orders', gain:'+330/hr',
+    metric:{ label:'Orders packed and sent per hour', from:820, to:1150, unit:'' }, note:'Orders must leave by 4 PM for same-day delivery',
+    sense:'A big online sale starts. Orders jump from 900 to <b>2,700 an hour</b>. Most people are buying the same 40 items, but those items sit on the far shelves, so workers keep walking back and forth.',
+    think:'The AI notices that a few items are in almost every order. If they sat next to the packing tables and all robots helped fetch them, the same staff could send far more orders.',
+    options:[['Move the 40 popular items next to packing','less walking',1],['Switch on all 8 robots for the busy shelves','faster fetching',1],['Call in an extra shift of workers','₹60,000, takes 3 hours',0]],
+    act:'surge', actLbl:'All 8 robots working · popular items moved close',
+    actX:'The 40 popular items are moved to the shelves nearest packing, and all 8 robots start fetching. Orders sent rise from 820 to <b>1,150 an hour</b>, enough to make the 4 PM deadline.',
+    phone:{ title:'Sale rush handled', body:'Orders tripled at 11 AM. Popular items moved close and all robots on duty. 1,150 orders an hour, deadline safe.' },
+    status:['Falling behind','Re-planning…','On track'] },
+  jam: { name:'Belt blocked', time:'3:20 PM', blurb:'Boxes piling up on the conveyor', sensor:'cam', gain:'−280 late/hr',
+    metric:{ label:'Boxes delayed per hour', from:300, to:20, unit:'' }, note:'Trucks leave at 5 PM',
+    sense:'Packed boxes ride a moving belt (the conveyor) to the trucks. The camera over the belt sees <b>boxes piling up</b> at one point. Nothing has moved past it for 90 seconds.',
+    think:'One oversized box is stuck where two belts join. A second, spare belt (Lane B) is free and can carry the boxes while someone removes the stuck one.',
+    options:[['Send boxes along the spare belt now','boxes move again',1],['Send the technician a photo of the stuck box','fixed in minutes',1],['Stop everything until it is fixed','300 boxes late',0]],
+    act:'jam', actLbl:'Spare belt on · technician alerted',
+    actX:'Within seconds the boxes take the spare belt, and the technician gets a photo showing exactly what is stuck. Late boxes drop from 300 to <b>20 an hour</b>.',
+    phone:{ title:'Belt jam cleared', body:'A big box blocked the belt at 3:20 PM. Boxes moved to the spare belt and the box was removed in 4 minutes.' },
+    status:['Belt blocked','Rerouting…','Moving again'] },
+  load: { name:'Trucks leaving half-empty', time:'6:30 PM', blurb:'Space wasted inside trucks', sensor:'dock', gain:'1 truck saved',
+    metric:{ label:'How full the truck is', from:62, to:91, unit:' %' }, note:'6 trucks booked for tonight',
+    sense:'A scanner at the loading door measures every box going into the truck. Because boxes go in the order they arrive, there are gaps, and the truck is only <b>62 % full</b>.',
+    think:'Like packing a suitcase well, the AI works out where each box should go to leave no gaps. Then tonight’s boxes fit into 5 trucks instead of 6.',
+    options:[['Give loaders a box-by-box packing plan','+29 % space',1],['Combine two half-full trucks going the same way','1 truck saved',1],['Send all 6 trucks as they are','₹18,000 extra',0]],
+    act:'load', actLbl:'Box-by-box packing plan',
+    actX:'The loaders’ handheld screens show where each box goes. The truck is filled to <b>91 %</b>, and tonight’s boxes fit in 5 trucks instead of 6.',
+    phone:{ title:'One truck saved tonight', body:'The truck at door 2 was 62 % full. With the packing plan it is 91 % full. 5 trucks instead of 6, about ₹18,000 saved.' },
+    status:['Wasting space','Re-planning…','Packed well'] },
+};
+const ORDER = ['surge','jam','load'];
+const SEND_TXT = 'The control tower sends this, along with thousands of other updates from robots, scanners and orders, to the cloud at {time}.';
+const GW_NAME = ['Control tower', 'Warehouse main computer'];
+const AI_WHAT = 'Plans the work';
+const PHONE_THEME = { head:'#3a1608', light:'#ffc7a8', title:'Smart Logistics', sub:'Online-order warehouse · Pune', who:'Shift manager', ask:'Will today’s orders go out on time?', idleTitle:'All running', idleBody:'The AI is watching orders, robots and trucks.' };
+
+
+/* floor + walls */
+box(40, 0.2, 28, 0xd9dbd7, 0, 0.1, 0);
+box(40, 3, 0.3, 0xe9ebe8, 0, 1.5, -14.1);
+box(0.3, 3, 28, 0xe9ebe8, -20.1, 1.5, 0);
+for (const [z0, z1] of [[-14, -7.4], [-4.6, -1.4], [1.4, 4.6], [7.4, 14]]) box(0.3, 3, z1 - z0, 0xe9ebe8, 19.6, 1.5, (z0 + z1) / 2);
+for (const z of [-6, 0, 6]) { box(0.35, 0.25, 2.8, 0x8a949a, 19.6, 3.0, z); }
+flat(36, 0.15, 0xf2c230, -2, 5.4, 0.21); flat(36, 0.15, 0xf2c230, -2, -12, 0.21);
+
+/* racks */
+const beam = std(0xe07b2a, { metalness:0.4 }), upr = std(0x4a6f9c, { metalness:0.5 });
+const cardboard = [0xc89b62, 0xb88a52, 0xd6ae73, 0xbf9257].map(c => std(c));
+const bxGeo = new THREE.BoxGeometry(0.8, 0.55, 0.8);
+const HOT = [];
+for (const z of [-10, -6, -2, 2]) {
+  for (let x = -17; x <= -3.01; x += 2) box(0.08, 3.2, 1.2, upr, x, 1.6, z);
+  box(0.08, 3.2, 1.2, upr, -3, 1.6, z);
+  for (const y of [0.35, 1.35, 2.35]) {
+    box(14, 0.07, 1.2, beam, -10, y, z);
+    for (let b = 0; b < 7; b++) if ((b * 7 + y * 10 + z) % 3 !== 0) { const m = mesh(bxGeo, cardboard[(b + Math.round(y)) % 4], -16 + b * 2 + (b % 2 ? 0.2 : -0.2), y + 0.31, z); if (b === 6 && z === 2) HOT.push(m); }
+  }
+}
+
+/* mobile robots */
+const loopA = curve([V(-16,0.3,-8),V(-3,0.3,-8),V(1,0.3,-6.5),V(2.6,0.3,-3.5),V(1,0.3,-0.2),V(-3,0.3,0),V(-16,0.3,0),V(-18.3,0.3,-4)], true);
+const loopB = curve([V(-16,0.3,-4),V(-3,0.3,-4),V(1,0.3,-1.5),V(2.6,0.3,1.8),V(1,0.3,4),V(-3,0.3,4),V(-16,0.3,4),V(-18.3,0.3,0)], true);
+const AMRS = [];
+for (let i = 0; i < 8; i++) {
+  const g = new THREE.Group(); scene.add(g);
+  box(0.95, 0.32, 0.72, 0xf28c28, 0, 0.3, 0, g);
+  box(0.6, 0.38, 0.5, i % 2 ? 0x3d7be0 : 0xc89b62, 0, 0.66, 0, g);
+  mesh(new THREE.SphereGeometry(0.06, 8, 6), new THREE.MeshBasicMaterial({ color:0x3fd17a }), 0.45, 0.42, 0, g);
+  const mv = new Mover(g, i % 2 ? loopB : loopA, 0.035, (Math.floor(i / 2) * 0.25 + (i % 2) * 0.12) % 1);
+  AMRS.push({ g, mv, extra: i >= 4 });
+}
+
+/* packing stations */
+for (const z of [-6, -1, 4]) { box(2, 0.9, 1.2, 0xbac2c7, 4.6, 0.65, z); box(0.06, 0.5, 0.7, 0x26303a, 4.1, 1.4, z); person([0x2f6fb3, 0xc4513a, 0x3e8f5a][(z + 6) % 3], 5.3, z + 0.9); }
+
+/* conveyor */
+const beltMat = std(0x2b3036, { roughness:0.6 }), railMat = std(0x9aa4aa, { metalness:0.5 });
+const seg = (x0, z0, x1, z1, mat = beltMat) => { const len = Math.hypot(x1 - x0, z1 - z0); const m = box(len, 0.14, 1, mat, (x0 + x1) / 2, 0.82, (z0 + z1) / 2); m.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+  for (let k = 0; k <= len; k += 2) { const t = len ? k / len : 0; box(0.08, 0.75, 0.8, railMat, x0 + (x1 - x0) * t, 0.38, z0 + (z1 - z0) * t); } return m; };
+seg(6.5, -8.5, 6.5, 7.2); seg(6.5, 7.2, 8, 8.5); seg(8, 8.5, 15, 8.5); seg(15, 8.5, 16.5, 7); seg(16.5, 7, 16.5, -7.5);
+const laneBMat = std(0x2b3036, { roughness:0.6, emissive:0x000000 });
+seg(8, 10.2, 15, 10.2, laneBMat); seg(7, 8.5, 8, 10.2, laneBMat); seg(15, 10.2, 16.5, 7.5, laneBMat);
+const beltCurve = curve([V(6.5,1.15,-8.5), V(6.5,1.15,6.8), V(8,1.15,8.5), V(15,1.15,8.5), V(16.5,1.15,6.6), V(16.5,1.15,-7.5)]);
+let tj = 0, best = 1e9; for (let i = 0; i <= 400; i++) { const q = beltCurve.getPointAt(i / 400); const d = (q.x - 11.5) ** 2 + (q.z - 8.5) ** 2; if (d < best) { best = d; tj = i / 400; } }
+const BELT = []; for (let i = 0; i < 26; i++) BELT.push({ m: mesh(new THREE.BoxGeometry(0.7, 0.5, 0.6), cardboard[i % 4]), t: i / 26 });
+const stuck = box(1.4, 0.9, 1.1, 0xa8794a, 11.8, 1.35, 8.5);
+// camera pole over the merge
+box(0.08, 3.4, 0.08, 0x6b7378, 12, 1.7, 9.4); box(0.4, 0.25, 0.3, 0xf2f4f5, 12, 3.4, 9.0);
+
+/* docks + trucks */
+const T1 = truck(0x2f6fb3, 0xeef0f1, 6); T1.position.set(25.8, 0, -6);
+const T2 = truck(0xd4511a, 0xeef0f1, 6); T2.position.set(25.8, 0, 0);
+const T3 = truck(0x3e8f5a, 0xeef0f1, 6); T3.position.set(25.8, 0, 6);
+T2.children[0].material = new THREE.MeshStandardMaterial({ color:0xeef0f1, transparent:true, opacity:0.28, depthWrite:false });
+const CARGO = []; for (let i = 0; i < 12; i++) { const col = Math.floor(i / 4), lvl = (i >> 1) % 2, side = i % 2;
+  CARGO.push(mesh(new THREE.BoxGeometry(1.4, 0.9, 0.95), cardboard[i % 4], -0.9 - col * 1.6 - (i >= 8 ? 0 : 0), 0.95 + lvl * 0.92, side ? 0.5 : -0.5, T2)); }
+CARGO.forEach((c, i) => { const n = Math.floor(i / 2); c.position.x = -1.2 - Math.floor(n / 2) * 1.9; c.position.y = 0.95 + (i % 2) * 0.92; c.position.z = n % 2 ? 0.5 : -0.5; });
+const gaugeBg = box(5.8, 0.22, 0.3, 0x55606a, 22.8, 3.5, 0); gaugeBg.castShadow = false;
+const gaugeFill = box(5.8, 0.26, 0.34, 0xf0a43a, 22.8, 3.5, 0); gaugeFill.castShadow = false;
+// RFID gate at dock 1
+box(0.15, 3, 0.15, 0x6b7378, 18.5, 1.5, -7.2); box(0.15, 3, 0.15, 0x6b7378, 18.5, 1.5, -4.8); box(0.2, 0.3, 2.6, 0xf2f4f5, 18.5, 3.05, -6);
+
+/* control room */
+box(8, 3, 5, 0xeef0f2, -14, 1.5, 10);
+box(8.3, 0.25, 5.3, 0x3a1608, -14, 3.1, 10);
+const orderScr = mesh(new THREE.PlaneGeometry(3.2, 1.4), new THREE.MeshBasicMaterial({ color:0x1b2c45 }), -14, 1.9, 12.52); orderScr.castShadow = false;
+const GW = V(-11.5, 4.4, 9);
+box(0.06, 1.6, 0.06, 0x30373d, GW.x, 3.9, GW.z); box(0.6, 0.5, 0.35, 0xf2f4f5, GW.x, GW.y, GW.z);
+
+const CLOUD = V(-2, 14, -17), CROT = 0.3;
+const PHONE = V(24, 11, -13);
+const SENS = {
+  orders: { pos:V(-14, 2.9, 12.6), name:'Incoming orders', what:'How many people are buying' },
+  rack:   { pos:V(-10, 3.3, -6), name:'Shelf records', what:'What is on every shelf' },
+  amr:    { pos:V(0, 1.2, 0), name:'Robots', what:'Where they are, battery, job', follow:AMRS[0].g, off:V(0, 1.1, 0) },
+  cam:    { pos:V(12, 3.7, 9), name:'Belt camera', what:'Watches for jams' },
+  rfid:   { pos:V(18.5, 3.4, -6), name:'Entry scanner', what:'Counts goods coming in' },
+  dock:   { pos:V(19.6, 3.4, 0), name:'Door 2 scanner', what:'How full the truck is' },
+};
+const TARGET = { surge:V(-1, 1.2, -4), jam:V(11.8, 2, 8.5), load:V(22.8, 3.8, 0) };
+const PARTS_DEF = [
+  ['racks', V(-10, 3.6, -10), 'Shelves', 'Products stored here', 'var(--p1)'],
+  ['amrs', V(-8, 1.6, 4), 'Little robots', 'Carry items to packing', 'var(--p2)'],
+  ['pack', V(4.6, 2.2, -1), 'Packing tables', 'Orders boxed here', 'var(--accent)'],
+  ['conv', V(6.5, 1.8, -4), 'Moving belt', 'Boxes to the trucks', 'var(--p3)'],
+  ['laneb', V(11.5, 1.8, 10.2), 'Spare belt', 'Used if the main one jams', 'var(--p3)'],
+  ['docks', V(25, 3.8, 6), 'Loading doors', 'Boxes go into trucks', 'var(--p3)'],
+];
+const CAM = { target:V(3, 2, -1), dir:V(10, 26, 30), dist:[58, 92] };
+function effects(dt, T, sc, A, step, key) {
+  // robots: 4 normally, all 8 in the surge fix
+  const s = A('surge');
+  AMRS.forEach(r => { const vis = r.extra ? s : 1; r.g.visible = vis > 0.05; r.g.scale.setScalar(Math.max(0.01, vis)); r.mv.rate = 1 + 0.5 * s; });
+  HOT.forEach((h, i) => { h.material = s > 0.5 ? std(0xf28c28) : cardboard[i % 4]; });
+  // conveyor boxes with a jam at the merge
+  const jammed = key === 'jam' && A('jam') < 0.5;
+  stuck.visible = key === 'jam' && A('jam') < 0.7;
+  const v = reduce ? 0 : 0.028 * (key === 'surge' ? 1 + 0.4 * s : 1);
+  const order = BELT.slice().sort((a, b) => b.t - a.t);
+  let lim = tj;
+  order.forEach(b => {
+    if (jammed && b.t <= tj) { b.t = Math.min(b.t + v * dt, lim); lim = b.t - 0.016; }
+    else { b.t = (b.t + v * dt) % 1; }
+    const p = beltCurve.getPointAt(b.t), q = beltCurve.getPointAt(Math.min(1, b.t + 0.002));
+    b.m.position.copy(p); b.m.rotation.y = Math.atan2(-(q.z - p.z), q.x - p.x);
+  });
+  laneBMat.emissive.setRGB(0, 0.25 * A('jam'), 0.08 * A('jam'));
+  // truck fill at dock 2
+  const fill = 0.62 + 0.29 * A('load');
+  const n = Math.round(fill * 12);
+  CARGO.forEach((c, i) => c.visible = i < n);
+  gaugeFill.scale.x = fill; gaugeFill.position.x = 22.8 - 2.9 * (1 - fill);
+  gaugeFill.material.color.set(fill > 0.85 ? 0x3fd17a : 0xf0a43a);
+  orderScr.material.color.set(key === 'surge' && step <= 2 && Math.sin(T * 5) > 0 ? 0x7a2e10 : 0x1b2c45);
+}
+
+
+/* ---------- cloud + AI core ---------- */
+const cloud = new THREE.Group(); cloud.position.copy(CLOUD); cloud.rotation.y = CROT; scene.add(cloud);
+const cloudMat = new THREE.MeshStandardMaterial({ color:0xffffff, roughness:1, transparent:true, opacity:0.93 });
+[[0,0,0,2.5],[-2.5,-0.4,0.3,1.9],[2.6,-0.3,-0.2,2],[-1.2,1.1,-0.5,1.8],[1.3,1.2,0.3,1.6],[4.2,-0.6,0.3,1.3],[-4.2,-0.7,0,1.3]].forEach(([x,y,z,r]) => {
+  const m = new THREE.Mesh(sphere, cloudMat); m.position.set(x,y,z+1.2); m.scale.setScalar(r); cloud.add(m); });
+const coreMat = new THREE.MeshBasicMaterial({ color:0x6a55e6 });
+const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 1), new THREE.MeshBasicMaterial({ color:0x6a55e6, wireframe:true })); core.position.set(0, 0.2, 4); cloud.add(core);
+const coreIn = new THREE.Mesh(new THREE.IcosahedronGeometry(0.62, 0), coreMat); coreIn.position.copy(core.position); cloud.add(coreIn);
+const rings = [0,1,2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.04, 6, 48), new THREE.MeshBasicMaterial({ color:0x6a55e6, transparent:true, opacity:0 })); r.position.copy(core.position); cloud.add(r); return r; });
+const CORE = CLOUD.clone().add(V(4 * Math.sin(CROT), 0.2, 4 * Math.cos(CROT)));
+
+/* ---------- gateway marker + phone ---------- */
+const gwLed = mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color:0x26c2ff }), GW.x, GW.y + 0.2, GW.z + 0.22);
+const phone = new THREE.Group(); phone.position.copy(PHONE); scene.add(phone);
+mesh(new THREE.BoxGeometry(2.7, 5.2, 0.24), std(0x1b1f24, { roughness:0.3, metalness:0.3 }), 0, 0, 0, phone);
+const phoneCv = document.createElement('canvas'); phoneCv.width = 360; phoneCv.height = 720;
+const phoneTex = new THREE.CanvasTexture(phoneCv);
+const pscreen = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 5), new THREE.MeshBasicMaterial({ map:phoneTex })); pscreen.position.z = 0.13; phone.add(pscreen);
+phone.traverse(o => { o.castShadow = false; });
+
+/* ---------- sensors ---------- */
+for (const k in SENS) { const s = SENS[k];
+  s.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0x0f9bd7, transparent:true, opacity:0.85, depthWrite:false }));
+  s.glow.position.copy(s.pos).add(V(0, 0.3, 0)); s.glow.scale.setScalar(0.65); scene.add(s.glow); }
+
+/* ---------- data flows ---------- */
+const arc = (a, b, h) => [a.clone(), V(a.x, a.y + 1.5, a.z), V((a.x + b.x) / 2, Math.max(a.y, b.y) + h, (a.z + b.z) / 2), b.clone()];
+const F = { sense:{}, act:{} };
+for (const k in SENS) F.sense[k] = new Flow(arc(SENS[k].pos, GW, 5), 'read', 3, 0.3, 0.17);
+const midUp = (a, b, h) => V((a.x + b.x) / 2, Math.max(a.y, b.y) + h, (a.z + b.z) / 2);
+F.send = new Flow([GW.clone(), midUp(GW, CORE, 2), CORE.clone().add(V(0.3, 0.4, 0))], 'read', 5, 0.3, 0.27);
+F.cmd  = new Flow([CORE.clone().add(V(0.7, -0.7, 0.4)), midUp(GW, CORE, 0).add(V(1.2, 0, 1.2)), GW.clone().add(V(0.3, 0.3, 0.3))], 'cmd', 5, 0.3, 0.27);
+for (const k in TARGET) F.act[k] = new Flow(arc(GW, TARGET[k], 6), 'cmd', 4, 0.32, 0.19);
+F.tell = new Flow([CORE.clone().add(V(0.5, 0.3, 0.3)), midUp(CORE, PHONE, 3), PHONE.clone().add(V(-0.8, 0.8, 0))], 'msg', 4, 0.33, 0.27);
+F.ask  = new Flow([PHONE.clone().add(V(0, 2.9, 0)), midUp(CORE, PHONE, 6), CORE.clone().add(V(0, 1.1, 0))], 'msg', 2, 0.25, 0.17);
+
+/* ---------- labels ---------- */
+function addLabel(pos, html, color) {
+  const el = document.createElement('div'); el.className = 'lbl'; el.style.setProperty('--c', color); el.innerHTML = html; overlay.appendChild(el);
+  const L = { el, pos, on:false }; labels.push(L); return L;
+}
+for (const k in SENS) { const s = SENS[k]; s.label = addLabel(s.pos.clone().add(V(0, 0.75, 0)), `<i></i><b>${s.name}</b><span>${s.what}</span>`, 'var(--read)'); }
+const LB = {
+  gw: addLabel(GW.clone().add(V(0, 0.9, 0)), `<i></i><b>${GW_NAME[0]}</b><span>${GW_NAME[1]}</span>`, 'var(--read)'),
+  cloud: addLabel(CLOUD.clone().add(V(1.4, 3.1, 1.8)), `<i></i><b>Cloud AI</b><span>${AI_WHAT}</span>`, 'var(--ai)'),
+  phone: addLabel(PHONE.clone().add(V(0, 3.3, 0)), `<i></i><b>${PHONE_THEME.who}</b><span>Updates + questions</span>`, 'var(--msg)'),
+  act: addLabel(V(0, 0, 0), '', 'var(--cmd)'),
+};
+const PARTS = [];
+PARTS_DEF.forEach(([k, pos, name, what, c]) => { LB[k] = addLabel(pos, `<i></i><b>${name}</b><span>${what}</span>`, c || 'var(--accent)'); PARTS.push(k); });
+let showParts = false;
+
+/* ---------- phone ---------- */
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x+r, y); g.arcTo(x+w, y, x+w, y+h, r); g.arcTo(x+w, y+h, x, y+h, r); g.arcTo(x, y+h, x, y, r); g.arcTo(x, y, x+w, y, r); g.closePath(); }
+function wrapText(g, text, x, y, maxW, lh) { let line = ''; for (const w of text.split(' ')) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { g.fillText(line, x, y); line = w; y += lh; } else line = t; } g.fillText(line, x, y); return y; }
+function drawPhone(sc, done) {
+  const g = phoneCv.getContext('2d'), W = 360, m = sc.metric, P = PHONE_THEME, DF = FONT_NAME;
+  g.fillStyle = '#f3f5f6'; g.fillRect(0, 0, W, 720);
+  g.fillStyle = P.head; g.fillRect(0, 0, W, 150);
+  g.fillStyle = P.light; g.font = '700 20px Atkinson Hyperlegible, sans-serif'; g.fillText(sc.time, 24, 40);
+  g.fillStyle = '#ffffff'; g.font = `800 30px ${DF}, sans-serif`; g.fillText(P.title, 24, 100);
+  g.fillStyle = P.light; g.font = '400 19px Atkinson Hyperlegible, sans-serif'; g.fillText(P.sub, 24, 130);
+  rr(g, 18, 172, W - 36, 262, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; rr(g, 38, 194, done ? 170 : 130, 34, 17); g.fill();
+  g.fillStyle = '#ffffff'; g.font = '700 18px Atkinson Hyperlegible, sans-serif'; g.fillText(done ? sc.status[2] : 'Watching', 54, 217);
+  g.fillStyle = '#16202a'; g.font = `800 27px ${DF}, sans-serif`; wrapText(g, done ? sc.phone.title : P.idleTitle, 38, 272, W - 76, 32);
+  g.fillStyle = '#56656e'; g.font = '400 20px Atkinson Hyperlegible, sans-serif'; wrapText(g, done ? sc.phone.body : P.idleBody, 38, 314, W - 76, 27);
+  rr(g, 18, 452, W - 36, 126, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = '#56656e'; g.font = '400 18px Atkinson Hyperlegible, sans-serif'; g.fillText(m.label, 38, 486);
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; g.font = `800 44px ${DF}, sans-serif`; g.fillText(fmt(m, done ? m.to : m.from), 38, 546);
+  rr(g, 18, 606, W - 36, 70, 35); g.fillStyle = P.head; g.fill();
+  g.fillStyle = '#ffffff'; g.font = '400 21px Atkinson Hyperlegible, sans-serif'; g.fillText(`Ask: "${P.ask}"`, 40, 649);
+  phoneTex.needsUpdate = true;
+}
+
+/* ---------- theme ---------- */
+function applyTheme() {
+  const sky = new THREE.Color(css('--sky') || '#e3edf1');
+  scene.background = sky; scene.fog = new THREE.Fog(sky, 120, 240);
+  groundMat.color.set(css('--ground') || '#8fa27a');
+  const dark = sky.getHSL({}).l < 0.3;
+  hemi.intensity = dark ? 0.55 : 0.75; sun.intensity = dark ? 0.7 : 0.95;
+  const map = { read:css('--read'), cmd:css('--cmd'), msg:css('--msg'), p1:css('--p1'), p2:css('--p2'), p3:css('--p3') };
+  flows.forEach(f => f.color(map[f.kind]));
+  for (const k in SENS) SENS[k].glow.material.color.set(map.read);
+  const ai = css('--ai'); coreMat.color.set(ai); core.material.color.set(ai); rings.forEach(r => r.material.color.set(ai));
+  if (typeof onTheme === 'function') onTheme(dark);
+}
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+
+/* ---------- state ---------- */
+const thinkEl = $('#think');
+const state = { step:0, t:0, scen:ORDER[0], playing:!reduce, a:0 };
+const clock = new THREE.Clock();
+function applyStep() {
+  const sc = SCEN[state.scen], i = state.step;
+  for (const k in F.sense) F.sense[k].target = i === 0 ? (k === sc.sensor ? 1 : 0.6) : 0;
+  F.send.target = i === 1 ? 1 : 0; F.cmd.target = i === 3 ? 1 : 0;
+  for (const k in F.act) F.act[k].target = (i === 3 && sc.act === k) ? 1 : 0;
+  F.tell.target = i === 4 ? 1 : 0; F.ask.target = i === 4 ? 0.8 : 0;
+  for (const k in SENS) SENS[k].label.on = i === 0 || (k === sc.sensor && i <= 1);
+  LB.act.tgt = TARGET[sc.act]; LB.act.el.innerHTML = `<i></i><b>${sc.actLbl}</b>`; LB.act.act = i === 3;
+  updateLabelVis();
+  drawPhone(sc, i === 4);
+  thinkEl.innerHTML = `<div class="h">Cloud AI is checking options</div><div style="margin-top:4px">${sc.think}</div><ul>${sc.options.map(o => `<li class="${o[2] ? 'y' : 'n'}"><span class="m">${o[2] ? '✓' : '×'}</span><span>${o[0]}</span><span class="s">${o[1]}</span></li>`).join('')}</ul>`;
+  thinkEl.classList.toggle('on', i === 2);
+  $('#capT').textContent = STEPS[i].t; $('#capD').textContent = STEPS[i].d;
+  const ex = [sc.sense, SEND_TXT.replace('{time}', `<b>${sc.time}</b>`), sc.think, sc.actX, `Message to the ${PHONE_THEME.who.toLowerCase()}: <b>“${sc.phone.title}.”</b> ${sc.phone.body}`][i];
+  $('#capX').innerHTML = `<b>${sc.name}:</b> ` + ex;
+  document.querySelectorAll('.step').forEach((b, k) => { b.setAttribute('aria-current', k === i ? 'step' : 'false'); if (k !== i) b.style.setProperty('--p', k < i ? 1 : 0); });
+  $('#hudScen').textContent = `${sc.name} · ${sc.time}`; $('#hudLbl').textContent = sc.metric.label; $('#hudNote').textContent = sc.note;
+}
+function updateLabelVis() {
+  const i = state.step;
+  PARTS.forEach(k => LB[k].on = showParts);
+  LB.gw.on = showParts || i === 1; LB.cloud.on = showParts || i === 1 || i === 2 || i === 4; LB.phone.on = showParts || i === 4; LB.act.on = !!LB.act.act;
+}
+function setStep(i) { state.step = i; state.t = 0; applyStep(); }
+function setScen(k) { state.scen = k; state.a = 0; document.querySelectorAll('.scen button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k)); setStep(0); }
+function next() { if (state.step < 4) setStep(state.step + 1); else setScen(ORDER[(ORDER.indexOf(state.scen) + 1) % ORDER.length]); }
+
+const scenBox = $('#scen');
+ORDER.forEach(k => { const sc = SCEN[k], b = document.createElement('button'); b.dataset.k = k;
+  b.innerHTML = `<span class="d"></span><b>${sc.name}</b><span class="sv">${sc.gain}</span><small>${sc.blurb}</small>`; b.onclick = () => setScen(k); scenBox.appendChild(b); });
+document.querySelectorAll('.step').forEach(b => b.onclick = () => setStep(+b.dataset.i));
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+const playBtn = $('#play');
+const syncPlay = () => { playBtn.innerHTML = state.playing ? ICON_PAUSE : ICON_PLAY; playBtn.setAttribute('aria-label', state.playing ? 'Pause' : 'Play'); };
+playBtn.onclick = () => { state.playing = !state.playing; syncPlay(); }; syncPlay();
+$('#repeat').onclick = () => setStep(state.step);
+$('#next').onclick = next;
+const partsBtn = $('#partsBtn');
+partsBtn.onclick = () => { showParts = !showParts; partsBtn.setAttribute('aria-pressed', showParts); updateLabelVis(); };
+
+controls.target.copy(CAM.target);
+let placed = false;
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (!placed) { camera.position.copy(controls.target).add(CAM.dir.clone().setLength(w < 600 ? CAM.dist[1] : CAM.dist[0])); placed = true; }
+  camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+
+/* ---------- loop ---------- */
+const ease = (x) => x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2;
+const tmp = new THREE.Vector3();
+const stepBtns = document.querySelectorAll('.step');
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05), T = clock.elapsedTime, sc = SCEN[state.scen];
+  state.t = Math.min(state.t + dt, DUR);
+  if (state.playing && state.t >= DUR) next();
+  const p = state.t / DUR;
+  stepBtns[state.step].style.setProperty('--p', state.playing ? p : 1);
+  const m = sc.metric;
+  const k = state.step < 3 ? 0 : state.step === 3 ? ease(Math.min(1, p * 1.3)) : 1;
+  $('#hudVal').textContent = fmt(m, m.from + (m.to - m.from) * k);
+  const si = state.step < 3 ? 0 : state.step === 3 && p < 0.75 ? 1 : 2;
+  const chip = $('#hudChip'); chip.textContent = sc.status[si]; chip.style.setProperty('--sev', si === 2 ? 'var(--ok)' : 'var(--warn)');
+  state.a += ((state.step >= 3 ? 1 : 0) - state.a) * Math.min(1, dt * 1.2);
+  const A = (id) => state.scen === id ? state.a : 0;
+
+  effects(dt, T, sc, A, state.step, state.scen);
+  movers.forEach(mv => mv.update(dt));
+  for (const key in SENS) { const s = SENS[key], hot = key === sc.sensor;
+    if (s.follow) { s.pos.copy(s.follow.position).add(s.off || V(0, 2.4, 0)); s.glow.position.copy(s.pos).add(V(0, 0.3, 0)); s.label.pos.copy(s.pos).add(V(0, 0.75, 0)); }
+    s.glow.scale.setScalar(hot && state.step <= 1 ? 0.9 + 0.25 * Math.sin(T * 5) : state.step === 0 ? 0.55 + 0.2 * Math.sin(T * 6 + s.pos.x) : 0.35); }
+  if (LB.act.tgt) LB.act.pos = LB.act.tgt.clone().add(V(0, 0.9, 0));
+  gwLed.material.color.set((state.step === 1 || state.step === 3) && Math.sin(T * 14) > 0 ? 0x26c2ff : 0x1d4050);
+  const thinking = state.step === 2, spin = reduce ? 0 : 1;
+  core.rotation.y += dt * (thinking ? 2.2 : 0.4) * spin; core.rotation.x += dt * (thinking ? 1.1 : 0.2) * spin;
+  coreIn.scale.setScalar(1 + (thinking ? 0.18 * Math.sin(T * 8) : 0));
+  rings.forEach((r, j) => { const q = (T * 0.7 + j / 3) % 1; r.scale.setScalar(1 + q * 2.2); r.material.opacity = thinking ? (1 - q) * 0.8 : 0; r.lookAt(camera.position); });
+  phone.position.y = PHONE.y + (reduce ? 0 : Math.sin(T * 1.4) * 0.18);
+  phone.lookAt(tmp.copy(camera.position).setY(phone.position.y + 1));
+  phone.scale.setScalar(state.step === 4 ? 1.08 : 1);
+
+  flows.forEach(f => f.update(dt));
+  controls.update();
+  renderer.render(scene, camera);
+
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const L of labels) {
+    tmp.copy(L.pos).project(camera);
+    const vis = L.on && tmp.z < 1 && Math.abs(tmp.x) < 1.1 && Math.abs(tmp.y) < 1.1;
+    L.el.classList.toggle('on', vis);
+    if (!vis) continue;
+    const hw = L.el.offsetWidth / 2 + 6, px = Math.max(hw, Math.min(w - hw, (tmp.x + 1) / 2 * w));
+    L.el.style.transform = `translate(${px.toFixed(1)}px, ${((1 - tmp.y) / 2 * h).toFixed(1)}px) translate(-50%, calc(-100% - 8px))`;
+  }
+  requestAnimationFrame(frame);
+}
+setScen(ORDER[0]);
+frame();
+})();
+
+</script>
+
+</body></html>

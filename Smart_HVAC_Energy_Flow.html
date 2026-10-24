@@ -1,0 +1,710 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Smart HVAC Energy Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a 3D office building with its cooling plant on one big stage, a step rail, a plain-language caption, then the parts and the ways AI saves energy. */
+:root{
+  --bg:#f1f5f7; --surface:#ffffff; --ink:#14212a; --muted:#566874; --line:#d5e0e6;
+  --accent:#0d7a86; --accent-ink:#ffffff;
+  --read:#0f9bd7; --cmd:#1fae55; --msg:#d83a83; --ai:#6a55e6; --warn:#d9861a; --ok:#14894f;
+  --cold:#38b8e8; --warm:#ef7d45;
+  --sky:#e1eaf0; --ground:#a9b4ad;
+  --font-display:"Archivo", "Segoe UI", system-ui, sans-serif;
+  --font-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1317; --surface:#131d23; --ink:#e3edf2; --muted:#93a6b1; --line:#24343d;
+  --accent:#34c3cf; --accent-ink:#04161a;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --cold:#5fd0f7; --warm:#ff9561;
+  --sky:#0a1217; --ground:#1d262b; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0c1317; --surface:#131d23; --ink:#e3edf2; --muted:#93a6b1; --line:#24343d;
+  --accent:#34c3cf; --accent-ink:#04161a;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --cold:#5fd0f7; --warm:#ff9561;
+  --sky:#0a1217; --ground:#1d262b; color-scheme:dark }
+
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:18px}
+header{display:grid;gap:6px;max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.4vw,44px);line-height:1.06;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:0;font-size:17px}
+
+.stage{position:relative;height:clamp(460px,66vh,700px);border-radius:18px;overflow:hidden;background:var(--sky);border:1px solid var(--line);touch-action:none}
+.stage canvas{display:block;width:100%;height:100%;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;white-space:nowrap;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:5px 9px 5px 8px;font-size:12.5px;line-height:1.25;box-shadow:0 4px 14px rgba(0,0,0,.12);opacity:0;transition:opacity .45s;display:flex;gap:7px;align-items:center}
+.lbl.on{opacity:1}
+.lbl i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c,var(--read))}
+.lbl b{font-weight:700}
+.lbl span{color:var(--muted)}
+.lbl em{font-style:normal;font-weight:700;color:var(--c,var(--read));font-variant-numeric:tabular-nums}
+.lbl::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+
+.hud{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:grid;gap:2px;min-width:190px;box-shadow:0 6px 18px rgba(0,0,0,.1)}
+.hud .sc{font-size:12px;color:var(--muted)}
+.hud .mv{font-family:var(--font-display);font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.hud .ml{font-size:12px;color:var(--muted)}
+.hud .cf{font-size:12px;color:var(--ok);font-weight:700}
+.chip{justify-self:start;margin-top:4px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--sev) 16%,transparent);color:var(--sev)}
+.think{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:12px;width:min(320px,calc(100% - 24px));background:var(--surface);border:1px solid var(--ai);border-radius:14px;padding:12px 14px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.12);opacity:0;transform:translateY(-6px);transition:opacity .4s,transform .4s;pointer-events:none}
+.think.on{opacity:1;transform:none}
+.think .h{font-weight:700;color:var(--ai);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.think ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.think li{display:grid;grid-template-columns:18px 1fr auto;gap:6px;align-items:start;font-size:13px}
+.think li .m{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px}
+.think li.y .m{background:var(--ok)}
+.think li.n .m{background:var(--muted)}
+.think li.n{color:var(--muted)}
+.think li .s{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ok)}
+.think li.n .s{color:var(--muted);font-weight:400}
+.legend{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;right:12px;display:flex;gap:6px 12px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 24px);background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:12px}
+.legend span{display:flex;gap:6px;align-items:center}
+.legend i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.legend i.p{border-radius:2px;height:5px;width:14px}
+.parts-btn{all:unset;cursor:pointer;position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;display:flex;gap:7px;align-items:center}
+.parts-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.parts-btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.rail{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
+.step{all:unset;cursor:pointer;position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.step:focus-visible,.ctl:focus-visible,.scen button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.step .n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.step .t{font-family:var(--font-display);font-weight:800;font-size:16px}
+.step .bar{position:absolute;left:0;bottom:0;height:3px;width:calc(var(--p,0)*100%);background:var(--accent)}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ctrls{display:flex;gap:8px}
+.ctl{all:unset;cursor:pointer;display:grid;place-items:center;width:52px;min-height:52px;border-radius:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-sizing:border-box}
+.ctl:hover{border-color:var(--accent)}
+.ctl svg{width:20px;height:20px}
+.ctl.next{width:auto;padding:0 16px;grid-auto-flow:column;gap:6px;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0}
+
+.below{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px}
+.caption{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:grid;gap:8px;align-content:start}
+.caption h2{font-family:var(--font-display);font-size:24px;line-height:1.15;margin:0;text-wrap:balance}
+.caption p{margin:0;max-width:62ch}
+.caption .ex{border-top:1px dashed var(--line);padding-top:10px}
+.caption .ex b{color:var(--accent)}
+.side{display:grid;gap:10px;align-content:start}
+.side h3{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.scen{display:grid;gap:8px}
+.scen button{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.scen button .d{grid-row:span 2;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.scen button b{font-weight:700}
+.scen button small{color:var(--muted);font-size:13px;grid-column:2}
+.scen button .sv{grid-row:1/span 2;grid-column:3;font-weight:700;color:var(--ok);font-size:13px;font-variant-numeric:tabular-nums}
+.scen button[aria-pressed="true"]{border-color:var(--accent)}
+.scen button[aria-pressed="true"] .d{background:var(--accent)}
+
+.sec{display:grid;gap:12px;margin-top:10px}
+.sec h2{font-family:var(--font-display);font-size:22px;margin:0}
+.sec .sub{margin:0;color:var(--muted);max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.part{border-top:3px solid var(--c);background:var(--surface);border-radius:4px 4px 14px 14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.part b{font-family:var(--font-display);font-size:17px}
+.part p{margin:0;color:var(--muted);font-size:14.5px}
+.part ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.lever{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.lever b{font-family:var(--font-display);font-size:16.5px}
+.lever p{margin:0;color:var(--muted);font-size:14.5px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.fallback{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+@media (max-width:760px){
+  .rail{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .ctrls{grid-column:1/-1}
+  .ctrls>button{flex:1;min-height:44px}
+  .step{padding:8px 6px;text-align:center}
+  .step .t{font-size:13px}
+  .below{grid-template-columns:minmax(0,1fr)}
+  .stage{height:520px}
+  .hud{min-width:0;padding:8px 11px}
+  .hud .mv{font-size:22px}
+  .legend{font-size:11px;gap:4px 8px;bottom:52px}
+  .lbl{font-size:11px;padding:4px 7px}
+  .lbl span{display:none}
+  .think{top:auto;bottom:52px}
+}
+@media (prefers-reduced-motion: reduce){.lbl,.think{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Smart HVAC</div>
+    <h1>How AI keeps the building cool and cuts the power bill</h1>
+    <p class="lede">An office building, its cooling plant and the AI that runs them. Follow one saving from start to finish: sensors notice waste, the AI picks the best fix, the equipment adjusts, and you see the saving. Drag to turn the 3D view.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of an office building with air handlers and cooling towers on the roof, a chiller plant beside it, a building controller, a cloud AI and a phone, with animated data moving between them"></canvas>
+    <div class="overlay" id="overlay"></div>
+    <div class="hud" aria-live="polite">
+      <div class="sc" id="hudScen"></div>
+      <div class="mv" id="hudVal"></div>
+      <div class="ml">HVAC power right now</div>
+      <div class="chip" id="hudChip"></div>
+      <div class="cf">Rooms held at 24 °C</div>
+    </div>
+    <div class="think" id="think"></div>
+    <div class="legend" aria-label="Colours">
+      <span style="--c:var(--read)"><i></i>Readings</span>
+      <span style="--c:var(--cmd)"><i></i>Instructions</span>
+      <span style="--c:var(--msg)"><i></i>Messages to you</span>
+      <span style="--c:var(--cold)"><i class="p"></i>Cold water</span>
+      <span style="--c:var(--warm)"><i class="p"></i>Warm water</span>
+    </div>
+    <button class="parts-btn" id="partsBtn" aria-pressed="false">Label all parts</button>
+  </div>
+
+  <nav class="rail" aria-label="Steps">
+    <button class="step" data-i="0"><span class="n">Step 1</span><span class="t">Sense</span><span class="bar"></span></button>
+    <button class="step" data-i="1"><span class="n">Step 2</span><span class="t">Send</span><span class="bar"></span></button>
+    <button class="step" data-i="2"><span class="n">Step 3</span><span class="t">Think</span><span class="bar"></span></button>
+    <button class="step" data-i="3"><span class="n">Step 4</span><span class="t">Act</span><span class="bar"></span></button>
+    <button class="step" data-i="4"><span class="n">Step 5</span><span class="t">Tell you</span><span class="bar"></span></button>
+    <div class="ctrls">
+      <button class="ctl" id="repeat" aria-label="Repeat this step" title="Repeat this step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+      <button class="ctl" id="play" aria-label="Pause" title="Play / pause"></button>
+      <button class="ctl next" id="next" aria-label="Next step">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </nav>
+
+  <section class="below">
+    <article class="caption" aria-live="polite">
+      <h2 id="capT"></h2>
+      <p id="capD"></p>
+      <p class="ex" id="capX"></p>
+    </article>
+    <aside class="side">
+      <h3>Pick a saving</h3>
+      <div class="scen" id="scen"></div>
+    </aside>
+  </section>
+
+  <section class="sec">
+    <h2>The main parts, in plain words</h2>
+    <div class="grid">
+      <div class="part" style="--c:var(--cold)"><b>Chillers</b><p>The heart of the system. Big machines in the plant room that make cold water, usually around 6–8 °C. They use most of the HVAC power.</p></div>
+      <div class="part" style="--c:var(--warm)"><b>Cooling towers</b><p>On the roof. They throw the building’s heat out into the air, using fans and evaporating water.</p></div>
+      <div class="part" style="--c:var(--cold)"><b>Pumps and pipes</b><p>Pumps push cold water up to the air handlers and warm water to the cooling towers.</p></div>
+      <div class="part" style="--c:var(--accent)"><b>Air handlers (AHUs)</b><p>Big fan boxes. Air passes over cold-water coils, gets cooled and filtered, and is blown into the floors through ducts.</p></div>
+      <div class="part" style="--c:var(--accent)"><b>Ducts and air dampers</b><p>Ducts carry cool air to each floor. Dampers (VAV boxes) open or close to send more or less air where it is needed.</p></div>
+      <div class="part" style="--c:var(--read)"><b>Sensors and meters</b>
+        <ul><li>Room temperature and humidity</li><li>CO₂ (fresh air)</li><li>People counters</li><li>Water temperature and flow</li><li>Energy meters on chillers, pumps, fans</li><li>Outside weather</li></ul></div>
+      <div class="part" style="--c:var(--read)"><b>Building controller (BMS)</b><p>The local brain on site. It runs the equipment safely, collects all readings and passes them to the cloud.</p></div>
+      <div class="part" style="--c:var(--ai)"><b>Cloud AI</b><p>Learns how the building behaves, checks weather and tariffs, and keeps choosing the settings that use the least energy while keeping people comfortable.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Six ways the AI saves energy</h2>
+    <p class="sub">Each one is small. Running all of them every minute, every day, is where the big savings come from.</p>
+    <div class="grid">
+      <div class="lever"><b>Cool where people are</b><p>Empty floors and meeting rooms get less air. Busy ones get more.</p></div>
+      <div class="lever"><b>Follow the weather</b><p>On mild days, make the water a little less cold. Chillers work much less.</p></div>
+      <div class="lever"><b>Run the right chillers</b><p>One well-loaded chiller often beats two half-loaded ones.</p></div>
+      <div class="lever"><b>Slow fans and pumps</b><p>Running a fan at 80 % speed uses only about half the power of full speed.</p></div>
+      <div class="lever"><b>Beat the peak tariff</b><p>Pre-cool the building before expensive hours, then coast through them.</p></div>
+      <div class="lever"><b>Catch faults early</b><p>Dirty filters, stuck valves and leaking dampers waste energy quietly. The AI flags them.</p></div>
+    </div>
+    <p class="note">All numbers in this demo are examples for one mid-size office, priced at ₹9 per kWh.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $ = (s) => document.querySelector(s);
+const stage = $('#stage'), overlay = $('#overlay'), canvas = $('#c');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const TARIFF = 9;
+
+/* ---------- story ---------- */
+const STEPS = [
+  { t:'Sensors watch comfort and energy every minute',
+    d:'Sensors on every floor check temperature, humidity, fresh air and how many people are there. Meters measure how much power the chillers, pumps and fans are using.' },
+  { t:'The building controller sends it all to the cloud',
+    d:'The building controller (BMS) collects every reading and sends it securely over the internet. The building keeps running safely even if the internet drops.' },
+  { t:'The AI looks for the cheapest way to keep people comfortable',
+    d:'It compares what the building needs with what it is using, checks the weather and the tariff, and tries several options before picking the ones that save the most without hurting comfort.' },
+  { t:'The equipment adjusts by itself',
+    d:'The AI sends new settings back: fan speeds, air dampers, water temperature and which chillers run. Comfort limits are never crossed, and staff can override at any time.' },
+  { t:'You see what changed and what it saved',
+    d:'The facility manager gets a short message with the change and the saving in kW and rupees. They can approve it, undo it, or ask a question in plain words.' },
+];
+const SCEN = {
+  empty: { name:'Empty floor', time:'6:20 PM', blurb:'Floor 3 has gone home', sensor:'occ', from:410, to:368,
+    sense:'The people sensor on Floor 3 has counted <b>0 people for 25 minutes</b>, but the floor is still getting full cooling.',
+    think:'Cooling an empty floor wastes energy. The AI checks its options and picks the safe ones.',
+    options:[['Close Floor 3 air dampers to minimum','−24 kW',1],['Slow the air handler fans to match','−18 kW',1],['Switch Floor 3 off completely','stuffy air later',0]],
+    act:['vav3','ahu'], actLbl:{ vav3:'Closing to minimum', ahu:'Fans 100 % → 65 %' },
+    actX:'Floor 3 air dampers close to a minimum and the air handler fans slow from <b>100 %</b> to <b>65 %</b>. HVAC power drops from 410 to <b>368 kW</b>.',
+    phone:{ title:'Floor 3 set to standby', body:'Nobody on Floor 3 since 5:55 PM. Air reduced and fans slowed. Comfort unchanged.' },
+    status:['Wasting energy','Adjusting…'] },
+  mild: { name:'Mild morning', time:'7:30 AM', blurb:'Cooler weather outside', sensor:'weather', from:395, to:352,
+    sense:'The weather station reads <b>24 °C</b> outside. The chillers are still making water at <b>6.5 °C</b>, colder than today needs.',
+    think:'On a mild day the chillers can make slightly warmer water and every floor still stays at 24 °C.',
+    options:[['Raise chilled water from 6.5 to 8 °C','−31 kW',1],['Speed up tower fans for colder condenser water','−12 kW',1],['Switch one chiller off','too little cooling by noon',0]],
+    act:['chiller','tower'], actLbl:{ chiller:'Water 6.5 → 8 °C', tower:'Fans faster' },
+    actX:'Chilled water is raised to <b>8 °C</b> and the cooling tower fans speed up, so the chillers do less work. HVAC power drops from 395 to <b>352 kW</b>.',
+    phone:{ title:'Chiller settings tuned', body:'Mild morning, 24 °C outside. Chilled water raised to 8 °C. Rooms still at 24 °C.' },
+    status:['Over-cooling','Adjusting…'] },
+  seq: { name:'Two half-busy chillers', time:'11:10 AM', blurb:'One chiller can do the job', sensor:'meter', from:430, to:371,
+    sense:'The energy meter shows <b>both chillers at 45 % load</b>, and the HVAC plant drawing <b>430 kW</b>.',
+    think:'Chillers are most efficient when well loaded. One chiller at 85 % does the same job for less power.',
+    options:[['Run Chiller 1 alone at 85 %','−47 kW',1],['Slow the pumps to match','−12 kW',1],['Keep both chillers running','no saving',0]],
+    act:['chiller','pumps'], actLbl:{ chiller:'Chiller 2 off · Chiller 1 at 85 %', pumps:'Slowed to match' },
+    actX:'Chiller 2 ramps down and switches off, Chiller 1 takes the full load, and the pumps slow down to match. HVAC power drops from 430 to <b>371 kW</b>.',
+    phone:{ title:'Chiller 2 switched off', body:'Chiller 1 now carries the load at 85 %. Same comfort on every floor.' },
+    status:['Inefficient','Adjusting…'] },
+};
+const ORDER = ['empty','mild','seq'];
+const DUR = 7;
+const saveTxt = (sc) => `Saving ${sc.from - sc.to} kW · ₹${Math.round((sc.from - sc.to) * TARIFF / 10) * 10}/hour`;
+
+/* ---------- WebGL ---------- */
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias:true }); }
+catch(e){ stage.insertAdjacentHTML('beforeend','<div class="fallback">This browser could not start the 3D view. The steps below still explain each stage.</div>'); }
+if (!renderer) return;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 400);
+const flows = [], labels = [];
+const V = (x,y,z) => new THREE.Vector3(x,y,z);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.enablePan = false;
+controls.minDistance = 16; controls.maxDistance = 110; controls.maxPolarAngle = 1.5;
+controls.target.set(5, 9, 0);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a949a, 0.75); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff3e6, 0.95);
+sun.position.set(22, 34, 16); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-28, right:28, top:28, bottom:-28, near:1, far:110 });
+scene.add(sun);
+
+const std = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness:0.75, metalness:0.05 }, o));
+const mesh = (geo, mat, x=0, y=0, z=0, parent=scene) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+const sphere = new THREE.SphereGeometry(1, 14, 10);
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.35,'rgba(255,255,255,.8)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+
+/* ground */
+const groundMat = std(0xa9b4ad, { roughness:1 });
+const ground = new THREE.Mesh(new THREE.CircleGeometry(110, 48), groundMat);
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+const paving = new THREE.Mesh(new THREE.PlaneGeometry(30, 18), std(0xc9ccc8, { roughness:1 }));
+paving.rotation.x = -Math.PI/2; paving.position.set(5, 0.01, 0); paving.receiveShadow = true; scene.add(paving);
+
+/* ---------- building: 4 floors ---------- */
+const BW = 12, BD = 10, FH = 3, NF = 4;
+const slabMat = std(0xdfe3e6), glassMat = new THREE.MeshStandardMaterial({ color:0xbfe3f2, transparent:true, opacity:0.16, roughness:0.1, metalness:0.2, side:THREE.DoubleSide, depthWrite:false });
+const edgeMat = new THREE.LineBasicMaterial({ color:0x7f8e98, transparent:true, opacity:0.7 });
+for (let f = 0; f <= NF; f++) mesh(new THREE.BoxGeometry(BW + 0.3, 0.25, BD + 0.3), slabMat, 0, f * FH, 0);
+const shell = new THREE.Mesh(new THREE.BoxGeometry(BW, NF * FH, BD), glassMat); shell.position.y = NF * FH / 2; scene.add(shell);
+for (let f = 0; f < NF; f++) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(BW, FH, BD)), edgeMat); e.position.y = f * FH + FH/2; scene.add(e); }
+for (const [x,z] of [[-BW/2,-BD/2],[BW/2,-BD/2],[-BW/2,BD/2],[BW/2,BD/2],[0,BD/2],[0,-BD/2]]) mesh(new THREE.BoxGeometry(0.3, NF*FH, 0.3), slabMat, x, NF*FH/2, z);
+mesh(new THREE.BoxGeometry(2.2, NF*FH + 1, 2.6), std(0xcfd5d9), -4.4, (NF*FH + 1)/2, -3.2); // stair & lift core
+
+/* desks, lights and people per floor */
+const deskMat = std(0xb88d62), lightMatOn = () => new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xfff2cf, emissiveIntensity:0.9 });
+const PEOPLE = [], LIGHTS = [];
+const shirt = [0x2f6fb3, 0xc4513a, 0x3e8f5a, 0x7a5ab0, 0xd9a12b, 0x2d3e50];
+for (let f = 0; f < NF; f++) {
+  const y = f * FH + 0.13;
+  const grp = new THREE.Group(); scene.add(grp); PEOPLE.push(grp);
+  for (let i = 0; i < 6; i++) {
+    const x = -1.5 + (i % 3) * 2.6, z = -0.6 + Math.floor(i / 3) * 2.8;
+    mesh(new THREE.BoxGeometry(1.6, 0.08, 0.8), deskMat, x, y + 0.75, z);
+    mesh(new THREE.BoxGeometry(0.08, 0.75, 0.7), deskMat, x - 0.7, y + 0.37, z); mesh(new THREE.BoxGeometry(0.08, 0.75, 0.7), deskMat, x + 0.7, y + 0.37, z);
+    if ((i + f) % 4 !== 3) {
+      const p = new THREE.Group(); p.position.set(x + (i % 2 ? 0.3 : -0.3), y, z + 0.75); grp.add(p);
+      mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.95, 10), std(shirt[(i + f) % shirt.length]), 0, 0.6, 0, p);
+      mesh(sphere, std(0xe0b48f), 0, 1.25, 0, p).scale.setScalar(0.17);
+    }
+  }
+  for (let i = 0; i < 3; i++) { const l = mesh(new THREE.BoxGeometry(2.2, 0.05, 0.5), lightMatOn(), -1 + i * 2.8, (f + 1) * FH - 0.18, 1.6); l.castShadow = false; LIGHTS.push({ f, m:l }); }
+}
+
+/* ducts per floor + shaft */
+const ductMat = std(0xc3cbd1, { metalness:0.5, roughness:0.4 });
+mesh(new THREE.BoxGeometry(1, NF * FH + 0.6, 1), ductMat, 5.1, (NF * FH + 0.6)/2, -3.7);
+const VAV = [];
+for (let f = 0; f < NF; f++) {
+  const y = (f + 1) * FH - 0.5;
+  mesh(new THREE.BoxGeometry(10, 0.35, 0.6), ductMat, 0, y, -3.7);
+  mesh(new THREE.BoxGeometry(0.9, 0.55, 0.9), std(0x9aa6ae, { metalness:0.4 }), 3.9, y, -3.7);
+  const led = mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshBasicMaterial({ color:0x3fd17a }), 3.9, y + 0.33, -3.25);
+  VAV.push(led);
+  for (let x = -4; x <= 2.1; x += 2) mesh(new THREE.BoxGeometry(0.5, 0.06, 0.5), std(0xe6eaed), x, y - 0.2, -3.7);
+}
+
+/* roof: air handlers + cooling towers */
+const ROOF = NF * FH + 0.13;
+const ahuFans = [];
+for (const x of [1.4, -2.2]) {
+  mesh(new THREE.BoxGeometry(3, 1.5, 1.9), std(0xe4e8ea, { roughness:0.5 }), x, ROOF + 0.75, -3.1);
+  mesh(new THREE.BoxGeometry(3.02, 0.25, 1.92), std(0x5c6b75), x, ROOF + 0.4, -3.1);
+  const ring = mesh(new THREE.TorusGeometry(0.55, 0.06, 6, 24), std(0x3b4248), x + 0.7, ROOF + 1.55, -3.1); ring.rotation.x = Math.PI/2;
+  const rotor = new THREE.Group(); rotor.position.set(x + 0.7, ROOF + 1.56, -3.1); scene.add(rotor);
+  for (let k = 0; k < 4; k++) { const b = mesh(new THREE.BoxGeometry(0.9, 0.03, 0.18), std(0x8c979e, { metalness:0.6 }), 0, 0, 0, rotor); b.rotation.y = k * Math.PI/4 * 2; b.rotation.x = 0.35; }
+  ahuFans.push(rotor);
+}
+mesh(new THREE.BoxGeometry(1, 0.6, 1.4), ductMat, 4.2, ROOF + 0.35, -3.4);
+const towerFans = [];
+for (const x of [3.4, -0.6]) {
+  mesh(new THREE.CylinderGeometry(1.0, 1.3, 2.2, 20), std(0x8fa3ad, { roughness:0.6 }), x, ROOF + 1.1, 2.6);
+  const ring = mesh(new THREE.TorusGeometry(0.9, 0.07, 6, 24), std(0x3b4248), x, ROOF + 2.25, 2.6); ring.rotation.x = Math.PI/2;
+  const rotor = new THREE.Group(); rotor.position.set(x, ROOF + 2.28, 2.6); scene.add(rotor);
+  for (let k = 0; k < 3; k++) { const b = mesh(new THREE.BoxGeometry(1.6, 0.03, 0.22), std(0x4d5a62), 0, 0, 0, rotor); b.rotation.y = k * Math.PI/3; b.rotation.x = 0.3; }
+  towerFans.push(rotor);
+}
+function particles(n, color, size, spawn) {
+  const geo = new THREE.BufferGeometry(); const pos = new Float32Array(n*3);
+  for (let i = 0; i < n; i++) spawn(pos, i, true);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color, size, map:dotTex, transparent:true, opacity:0.35, depthWrite:false });
+  const p = new THREE.Points(geo, mat); scene.add(p); return { p, pos, n, spawn };
+}
+const plume = particles(160, 0xffffff, 0.9, (a, i, init) => { const x = i % 2 ? 3.4 : -0.6;
+  a[i*3] = x + (Math.random()-0.5)*1.2; a[i*3+1] = ROOF + 2.4 + (init ? Math.random()*3 : 0); a[i*3+2] = 2.6 + (Math.random()-0.5)*1.2; });
+
+/* weather station on roof corner */
+mesh(new THREE.CylinderGeometry(0.05, 0.06, 2.4, 8), std(0xb9c3c9, { metalness:0.6 }), -5.3, ROOF + 1.2, 4.3);
+const cups = new THREE.Group(); cups.position.set(-5.3, ROOF + 2.5, 4.3); scene.add(cups);
+for (let k = 0; k < 3; k++) { const arm = new THREE.Group(); arm.rotation.y = k * 2.094; cups.add(arm);
+  mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.45, 4), std(0xb9c3c9), 0.22, 0, 0, arm).rotation.z = Math.PI/2;
+  mesh(new THREE.SphereGeometry(0.09, 8, 6, 0, Math.PI), std(0xe9eef0), 0.45, 0, 0, arm); }
+
+/* ---------- plant room ---------- */
+const PX = 12;
+const plantGlass = new THREE.Mesh(new THREE.BoxGeometry(8, 4, 8), new THREE.MeshStandardMaterial({ color:0xdde6ea, transparent:true, opacity:0.14, side:THREE.DoubleSide, depthWrite:false }));
+plantGlass.position.set(PX, 2, 0); scene.add(plantGlass);
+const pe = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(8, 4, 8)), edgeMat); pe.position.set(PX, 2, 0); scene.add(pe);
+mesh(new THREE.BoxGeometry(8.2, 0.2, 8.2), slabMat, PX, 4.05, 0);
+const CH = [];
+for (const z of [-1.7, 1.7]) {
+  const evap = mesh(new THREE.CylinderGeometry(0.55, 0.55, 4, 20), std(0x4f7fa3, { metalness:0.3, roughness:0.45 }), PX + 0.4, 0.75, z); evap.rotation.z = Math.PI/2;
+  const cond = mesh(new THREE.CylinderGeometry(0.5, 0.5, 4, 20), std(0x8d9aa3, { metalness:0.3, roughness:0.45 }), PX + 0.4, 1.85, z); cond.rotation.z = Math.PI/2;
+  mesh(new THREE.BoxGeometry(1.4, 0.7, 0.8), std(0x5c6b75), PX + 1, 2.7, z);
+  mesh(new THREE.BoxGeometry(0.4, 1.4, 0.9), std(0xe6eaed), PX - 1.9, 1.2, z);
+  const led = mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color:0x3fd17a }), PX - 2.12, 1.6, z);
+  CH.push({ evap, cond, led, base:evap.material.color.clone() });
+}
+const PUMPS = [];
+for (const z of [-3, 0, 3]) {
+  const pm = mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.7, 14), std(0x2f6fb3, { metalness:0.3 }), PX - 3.1, 0.45, z); pm.rotation.z = Math.PI/2;
+  mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.3, 14), std(0x3b4248), PX - 3.55, 0.45, z).rotation.z = Math.PI/2;
+  PUMPS.push(mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color:0x3fd17a }), PX - 3.1, 0.8, z));
+}
+mesh(new THREE.BoxGeometry(0.2, 1.2, 0.9), std(0x2b3238), PX + 3.85, 1.8, -3.2);
+const meterScr = mesh(new THREE.PlaneGeometry(0.6, 0.35), new THREE.MeshBasicMaterial({ color:0x26c2ff }), PX + 3.74, 2, -3.2); meterScr.rotation.y = -Math.PI/2;
+
+/* pipes */
+const tube = (pts, color, r = 0.12) => { const c = new THREE.CatmullRomCurve3(pts, false, 'centripetal'); mesh(new THREE.TubeGeometry(c, 90, r, 8), std(color, { metalness:0.4, roughness:0.4 })); return pts; };
+const CHW = tube([V(PX - 1.6, 0.75, -1.7), V(8.6, 0.75, -1.7), V(8.4, 3.5, -1.7), V(6.6, 3.5, -1.7), V(6.6, ROOF + 0.4, -1.7), V(6.1, ROOF + 0.9, -2.3), V(3, ROOF + 0.9, -2.3)], 0x2f86c8);
+const CW  = tube([V(PX - 1.6, 1.85, 1.7), V(8.6, 1.85, 1.7), V(8.4, 4.3, 1.7), V(6.8, 4.3, 1.7), V(6.8, ROOF + 0.4, 1.7), V(6.2, ROOF + 0.9, 2.4), V(4.5, ROOF + 0.9, 2.6)], 0xd96a3a);
+const CH2 = tube([V(PX - 1.6, 0.75, 1.7), V(9.4, 0.75, 1.7), V(9.2, 0.75, -1.5)], 0x2f86c8, 0.1);
+
+/* building controller (BMS) on plant room roof */
+const GW = V(PX + 2.6, 5.1, 3);
+mesh(new THREE.BoxGeometry(0.9, 1.1, 0.5), std(0xeef2f4, { roughness:0.4 }), GW.x, GW.y - 0.05, GW.z);
+mesh(new THREE.CylinderGeometry(0.025, 0.025, 1, 6), std(0x30373d), GW.x + 0.28, GW.y + 0.95, GW.z);
+const gwLed = mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshBasicMaterial({ color:0x26c2ff }), GW.x, GW.y + 0.25, GW.z + 0.27);
+
+/* cloud + AI core */
+const CLOUD = V(2, 20, -7), CROT = 0.7;
+const cloud = new THREE.Group(); cloud.position.copy(CLOUD); cloud.rotation.y = CROT; scene.add(cloud);
+const cloudMat = new THREE.MeshStandardMaterial({ color:0xffffff, roughness:1, transparent:true, opacity:0.93 });
+[[0,0,0,2.2],[-2.2,-0.4,0.3,1.6],[2.3,-0.3,-0.2,1.7],[-1.1,1,-0.5,1.5],[1.2,1.1,0.3,1.4],[3.6,-0.6,0.3,1.1],[-3.6,-0.7,0,1.1]].forEach(([x,y,z,r]) => {
+  const m = new THREE.Mesh(sphere, cloudMat); m.position.set(x,y,z+1.2); m.scale.setScalar(r); cloud.add(m); });
+const coreMat = new THREE.MeshBasicMaterial({ color:0x6a55e6 });
+const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshBasicMaterial({ color:0x6a55e6, wireframe:true }));
+core.position.set(0, 0.2, 3.6); cloud.add(core);
+const coreIn = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 0), coreMat); coreIn.position.copy(core.position); cloud.add(coreIn);
+const rings = [0,1,2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.035, 6, 48), new THREE.MeshBasicMaterial({ color:0x6a55e6, transparent:true, opacity:0 })); r.position.copy(core.position); cloud.add(r); return r; });
+const CORE = CLOUD.clone().add(V(3.6 * Math.sin(CROT), 0.2, 3.6 * Math.cos(CROT)));
+
+/* phone */
+const PHONE = V(16, 15, -9);
+const phone = new THREE.Group(); phone.position.copy(PHONE); scene.add(phone);
+mesh(new THREE.BoxGeometry(2.3, 4.4, 0.22), std(0x1b1f24, { roughness:0.3, metalness:0.3 }), 0, 0, 0, phone);
+const phoneCv = document.createElement('canvas'); phoneCv.width = 360; phoneCv.height = 720;
+const phoneTex = new THREE.CanvasTexture(phoneCv);
+const screen = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 4.2), new THREE.MeshBasicMaterial({ map:phoneTex })); screen.position.z = 0.12; phone.add(screen);
+
+/* ---------- sensors ---------- */
+const SENS = {
+  room:   { pos:V(-2.2, 4.6, 4.7), name:'Room sensor', what:'Floor 2 · temp · humidity' },
+  occ:    { pos:V(1.2, 8.75, 2.6), name:'People sensor', what:'Floor 3' },
+  co2:    { pos:V(3.2, 10.6, 4.7), name:'Fresh-air sensor', what:'Floor 4 · CO₂' },
+  water:  { pos:V(8.4, 3.75, -1.7), name:'Water sensor', what:'Temp · flow' },
+  meter:  { pos:V(PX + 3.6, 2.7, -3.2), name:'Energy meter', what:'Chillers · pumps · fans' },
+  weather:{ pos:V(-5.3, ROOF + 2.9, 4.3), name:'Weather station', what:'Outside temp · humidity' },
+};
+for (const k in SENS) {
+  const s = SENS[k];
+  if (k !== 'weather' && k !== 'meter') mesh(k === 'occ' ? new THREE.CylinderGeometry(0.2, 0.2, 0.08, 14) : new THREE.BoxGeometry(0.32, 0.26, 0.12), std(0xf6f8f9, { roughness:0.4 }), s.pos.x, s.pos.y, s.pos.z);
+  s.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0x0f9bd7, transparent:true, opacity:0.85, depthWrite:false }));
+  s.glow.position.copy(s.pos).add(V(0, k === 'occ' ? -0.2 : 0.25, 0)); s.glow.scale.setScalar(0.5); scene.add(s.glow);
+}
+
+/* ---------- flows ---------- */
+class Flow {
+  constructor(pts, kind, n = 4, speed = 0.32, size = 0.2, line = true) {
+    this.curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    this.kind = kind; this.speed = speed; this.on = 0; this.target = 0; this.off = Math.random(); this.rate = 1;
+    this.lineMat = new THREE.LineDashedMaterial({ color:0xffffff, dashSize:0.32, gapSize:0.25, transparent:true, opacity:0, depthWrite:false });
+    this.line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(this.curve.getPoints(100)), this.lineMat);
+    this.line.computeLineDistances(); this.hasLine = line; if (line) scene.add(this.line);
+    this.dots = [];
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 8), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0 }));
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0xffffff, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }));
+      g.scale.setScalar(size * 5); m.add(g); scene.add(m); this.dots.push({ m, g });
+    }
+    flows.push(this);
+  }
+  color(c) { this.lineMat.color.set(c); this.dots.forEach(d => { d.m.material.color.set(c); d.g.material.color.set(c); }); }
+  update(dt) {
+    this.on += (this.target - this.on) * Math.min(1, dt * 3.5);
+    if (!reduce) this.off = (this.off + dt * this.speed * this.rate) % 1;
+    const vis = this.on > 0.01;
+    this.line.visible = vis && this.hasLine; this.lineMat.opacity = this.on * 0.6;
+    this.dots.forEach((d, i) => {
+      d.m.visible = vis; if (!vis) return;
+      const t = (this.off + i / this.dots.length) % 1;
+      d.m.position.copy(this.curve.getPointAt(t));
+      const edge = Math.min(1, t * 8, (1 - t) * 8);
+      d.m.material.opacity = this.on * edge; d.g.material.opacity = this.on * edge * 0.55;
+    });
+  }
+}
+const F = { sense:{} };
+for (const k in SENS) {
+  const p = SENS[k].pos; let pts;
+  if (k === 'water') pts = [p.clone(), V(10.5, 6, 0.5), GW.clone()];
+  else if (k === 'meter') pts = [p.clone(), V(PX + 3.4, 4.8, 0), GW.clone()];
+  else if (k === 'weather') pts = [p.clone(), V(3, ROOF + 5, 5), V(11, 9, 4.5), GW.clone()];
+  else pts = [p.clone(), V(p.x, p.y, 5.6), V((p.x + GW.x) / 2 + 1, Math.max(p.y, GW.y) + 1.2, 5.2), GW.clone()];
+  F.sense[k] = new Flow(pts, 'read', 3, 0.3, 0.14);
+}
+F.send = new Flow([GW.clone(), V(13, 12, 0), V(9, 19, -3), CORE.clone().add(V(0.3, 0.4, 0))], 'read', 5, 0.3, 0.22);
+F.cmd  = new Flow([CORE.clone().add(V(0.6, -0.6, 0.3)), V(10, 16, 0.5), V(14, 9, 3), GW.clone().add(V(0, 0.5, 0.3))], 'cmd', 5, 0.3, 0.22);
+F.ahu  = new Flow([GW.clone(), V(10, 11, -0.5), V(4.5, ROOF + 2.6, -2.6), V(1.4, ROOF + 1.7, -3.1)], 'cmd', 3, 0.35, 0.15);
+F.vav3 = new Flow([GW.clone(), V(9.5, 8.6, 0), V(6.4, 8.3, -3.2), V(4.3, 8.5, -3.7)], 'cmd', 3, 0.4, 0.15);
+F.chiller = new Flow([GW.clone(), V(PX + 1, 4.6, 0.5), V(PX - 2.1, 1.9, 0)], 'cmd', 3, 0.45, 0.15);
+F.tower = new Flow([GW.clone(), V(9, ROOF + 2, 4.5), V(3.4, ROOF + 3, 2.6)], 'cmd', 3, 0.35, 0.15);
+F.pumps = new Flow([GW.clone(), V(PX - 1, 4.4, 3.4), V(PX - 3.1, 1, 1.5)], 'cmd', 3, 0.45, 0.15);
+F.tell = new Flow([CORE.clone().add(V(0.5, 0.3, 0.3)), V(10, 21, -8), PHONE.clone().add(V(-0.7, 0.8, -0.3))], 'msg', 4, 0.33, 0.22);
+F.ask  = new Flow([PHONE.clone().add(V(0, 2.4, 0)), V(9, 23, -9), CORE.clone().add(V(0, 1, 0))], 'msg', 2, 0.25, 0.15);
+/* physical flows, always running */
+F.chw = new Flow(CHW, 'cold', 14, 0.12, 0.13, false);
+F.cw  = new Flow(CW, 'warm', 14, 0.12, 0.13, false);
+F.ch2 = new Flow(CH2, 'cold', 4, 0.25, 0.11, false);
+F.air = [0,1,2,3].map(f => new Flow([V(4.6, (f + 1) * FH - 0.85, -3.7), V(0, (f + 1) * FH - 0.9, -3.4), V(-4.6, (f + 1) * FH - 0.85, -3.7)], 'air', 6, 0.25, 0.09, false));
+
+/* ---------- labels ---------- */
+function addLabel(pos, html, color) {
+  const el = document.createElement('div'); el.className = 'lbl'; el.style.setProperty('--c', color); el.innerHTML = html; overlay.appendChild(el);
+  const L = { el, pos, on:false, base:html, c:color }; labels.push(L); return L;
+}
+for (const k in SENS) { const s = SENS[k]; s.label = addLabel(s.pos.clone().add(V(0, 0.55, 0)), `<i></i><b>${s.name}</b><span>${s.what}</span>`, 'var(--read)'); }
+const part = (pos, name, what, c = 'var(--accent)') => addLabel(pos, `<i></i><b>${name}</b><span>${what}</span>`, c);
+const LB = {
+  gw:      part(GW.clone().add(V(0, 2.2, 0)), 'Building controller', 'BMS · sends data out', 'var(--read)'),
+  cloud:   part(CLOUD.clone().add(V(1.4, 2.6, 1.6)), 'Cloud AI', 'Finds energy savings', 'var(--ai)'),
+  ahu:     part(V(1.4, ROOF + 2.3, -3.1), 'Air handlers', 'Cool and blow air'),
+  tower:   part(V(3.4, ROOF + 3, 2.6), 'Cooling towers', 'Throw heat outside', 'var(--warm)'),
+  chiller: part(V(PX + 0.6, 3.1, -2.2), 'Chillers', 'Make cold water', 'var(--cold)'),
+  pumps:   part(V(PX - 3.1, 1.3, 3), 'Pumps', 'Move the water', 'var(--cold)'),
+  vav3:    part(V(3.9, 8.9, -3.7), 'Floor 3 air dampers', 'Air to each floor'),
+  ducts:   part(V(-2, 5.9, -3.7), 'Ducts', 'Carry cool air'),
+  phone:   part(PHONE.clone().add(V(0, 2.9, 0)), 'Facility manager', 'Saving + questions', 'var(--msg)'),
+};
+const ACTP = ['ahu','tower','chiller','pumps','vav3'];
+let showParts = false;
+
+/* ---------- phone ---------- */
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x+r, y); g.arcTo(x+w, y, x+w, y+h, r); g.arcTo(x+w, y+h, x, y+h, r); g.arcTo(x, y+h, x, y, r); g.arcTo(x, y, x+w, y, r); g.closePath(); }
+function wrapText(g, text, x, y, maxW, lh) { let line = ''; for (const w of text.split(' ')) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { g.fillText(line, x, y); line = w; y += lh; } else line = t; } g.fillText(line, x, y); return y; }
+function drawPhone(sc, done) {
+  const g = phoneCv.getContext('2d'), W = 360, H = 720;
+  g.fillStyle = '#f2f6f8'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#0b3b42'; g.fillRect(0, 0, W, 150);
+  g.fillStyle = '#9fdde3'; g.font = '700 20px Atkinson Hyperlegible, sans-serif'; g.fillText(sc.time, 24, 40);
+  g.fillStyle = '#ffffff'; g.font = '800 30px Archivo, sans-serif'; g.fillText('Smart HVAC', 24, 100);
+  g.fillStyle = '#9fdde3'; g.font = '400 19px Atkinson Hyperlegible, sans-serif'; g.fillText('Tower A · 4 floors', 24, 130);
+  rr(g, 18, 172, W - 36, 262, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = done ? '#14894f' : '#d9861a'; rr(g, 38, 194, done ? 150 : 130, 34, 17); g.fill();
+  g.fillStyle = '#ffffff'; g.font = '700 18px Atkinson Hyperlegible, sans-serif'; g.fillText(done ? 'Saving energy' : 'Watching', 54, 217);
+  g.fillStyle = '#14212a'; g.font = '800 27px Archivo, sans-serif'; wrapText(g, done ? sc.phone.title : 'Comfort is fine', 38, 272, W - 76, 32);
+  g.fillStyle = '#566874'; g.font = '400 20px Atkinson Hyperlegible, sans-serif'; wrapText(g, done ? sc.phone.body : 'The AI is checking for energy waste.', 38, 314, W - 76, 27);
+  rr(g, 18, 452, W - 36, 126, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = '#566874'; g.font = '400 18px Atkinson Hyperlegible, sans-serif'; g.fillText('HVAC power', 38, 486);
+  g.fillStyle = done ? '#14894f' : '#d9861a'; g.font = '800 44px Archivo, sans-serif'; g.fillText((done ? sc.to : sc.from) + ' kW', 38, 540);
+  if (done) { g.fillStyle = '#14894f'; g.font = '700 18px Atkinson Hyperlegible, sans-serif'; g.fillText('−' + (sc.from - sc.to) + ' kW · ₹' + Math.round((sc.from - sc.to) * TARIFF / 10) * 10 + '/hr', 38, 566); }
+  rr(g, 18, 606, W - 36, 70, 35); g.fillStyle = '#0b3b42'; g.fill();
+  g.fillStyle = '#ffffff'; g.font = '400 21px Atkinson Hyperlegible, sans-serif'; g.fillText('Ask: "Why is Floor 3 warm?"', 40, 649);
+  phoneTex.needsUpdate = true;
+}
+
+/* ---------- theme ---------- */
+function applyTheme() {
+  const sky = new THREE.Color(css('--sky') || '#e1eaf0');
+  scene.background = sky; scene.fog = new THREE.Fog(sky, 90, 200);
+  groundMat.color.set(css('--ground') || '#a9b4ad');
+  const dark = sky.getHSL({}).l < 0.3;
+  hemi.intensity = dark ? 0.55 : 0.75; sun.intensity = dark ? 0.7 : 0.95;
+  const map = { read:css('--read'), cmd:css('--cmd'), msg:css('--msg'), cold:css('--cold'), warm:css('--warm'), air:'#d4f1ff' };
+  flows.forEach(f => f.color(map[f.kind]));
+  for (const k in SENS) SENS[k].glow.material.color.set(map.read);
+  const ai = css('--ai'); coreMat.color.set(ai); core.material.color.set(ai); rings.forEach(r => r.material.color.set(ai));
+}
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+
+/* ---------- state ---------- */
+const thinkEl = $('#think');
+const state = { step:0, t:0, scen:'empty', playing:!reduce, act:{ vav3:0, ahu:0, chiller:0, tower:0, pumps:0 }, f3:1 };
+const clock = new THREE.Clock();
+
+function applyStep() {
+  const sc = SCEN[state.scen], i = state.step;
+  for (const k in F.sense) F.sense[k].target = i === 0 ? (k === sc.sensor ? 1 : 0.65) : 0;
+  F.send.target = i === 1 ? 1 : 0; F.cmd.target = i === 3 ? 1 : 0;
+  ACTP.forEach(a => F[a].target = (i === 3 && sc.act.includes(a)) ? 1 : 0);
+  F.tell.target = i === 4 ? 1 : 0; F.ask.target = i === 4 ? 0.8 : 0;
+  for (const k in SENS) SENS[k].label.on = i === 0 || (k === sc.sensor && i <= 1);
+  ACTP.forEach(a => { const L = LB[a]; const acting = i === 3 && sc.act.includes(a);
+    L.el.innerHTML = acting ? `<i></i><b>${L.base.match(/<b>(.*?)<\/b>/)[1]}</b><em>${sc.actLbl[a]}</em>` : L.base; L.el.style.setProperty('--c', acting ? 'var(--cmd)' : L.c); L.act = acting; });
+  updateLabelVis();
+  drawPhone(sc, i === 4);
+  thinkEl.innerHTML = `<div class="h">Cloud AI is checking options</div><div style="margin-top:4px">${sc.think}</div><ul>${sc.options.map(o => `<li class="${o[2] ? 'y' : 'n'}"><span class="m">${o[2] ? '✓' : '×'}</span><span>${o[0]}</span><span class="s">${o[1]}</span></li>`).join('')}</ul>`;
+  thinkEl.classList.toggle('on', i === 2);
+  $('#capT').textContent = STEPS[i].t; $('#capD').textContent = STEPS[i].d;
+  const ex = [sc.sense, `The controller sends this reading and about 300 others from the whole building to the cloud at <b>${sc.time}</b>.`, sc.think, sc.actX,
+    `Message to the facility manager: <b>“${sc.phone.title}.”</b> ${sc.phone.body} ${saveTxt(sc)}.`][i];
+  $('#capX').innerHTML = `<b>${sc.name}:</b> ` + ex;
+  document.querySelectorAll('.step').forEach((b, k) => { b.setAttribute('aria-current', k === i ? 'step' : 'false'); if (k !== i) b.style.setProperty('--p', k < i ? 1 : 0); });
+  $('#hudScen').textContent = `${sc.name} · ${sc.time}`;
+}
+function updateLabelVis() {
+  const i = state.step;
+  ACTP.forEach(a => LB[a].on = showParts || LB[a].act);
+  LB.ducts.on = showParts; LB.gw.on = showParts || i === 1; LB.cloud.on = showParts || i === 1 || i === 2 || i === 4; LB.phone.on = showParts || i === 4;
+}
+function setStep(i) { state.step = i; state.t = 0; applyStep(); }
+function setScen(k) { state.scen = k; document.querySelectorAll('.scen button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k)); setStep(0); }
+function next() { if (state.step < 4) setStep(state.step + 1); else setScen(ORDER[(ORDER.indexOf(state.scen) + 1) % ORDER.length]); }
+
+const scenBox = $('#scen');
+ORDER.forEach(k => { const sc = SCEN[k], b = document.createElement('button'); b.dataset.k = k;
+  b.innerHTML = `<span class="d"></span><b>${sc.name}</b><span class="sv">−${sc.from - sc.to} kW</span><small>${sc.blurb}</small>`; b.onclick = () => setScen(k); scenBox.appendChild(b); });
+document.querySelectorAll('.step').forEach(b => b.onclick = () => setStep(+b.dataset.i));
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+const playBtn = $('#play');
+const syncPlay = () => { playBtn.innerHTML = state.playing ? ICON_PAUSE : ICON_PLAY; playBtn.setAttribute('aria-label', state.playing ? 'Pause' : 'Play'); };
+playBtn.onclick = () => { state.playing = !state.playing; syncPlay(); }; syncPlay();
+$('#repeat').onclick = () => setStep(state.step);
+$('#next').onclick = next;
+const partsBtn = $('#partsBtn');
+partsBtn.onclick = () => { showParts = !showParts; partsBtn.setAttribute('aria-pressed', showParts); updateLabelVis(); };
+
+let placed = false;
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (!placed) { camera.position.copy(controls.target).add(V(25, 15, 29).setLength(w < 600 ? 66 : 47)); placed = true; }
+  camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+
+/* ---------- loop ---------- */
+const ease = (x) => x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2;
+const tmp = new THREE.Vector3();
+const stepBtns = document.querySelectorAll('.step');
+const lightOn = new THREE.Color(0xfff2cf), lightOff = new THREE.Color(0x000000);
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05), T = clock.elapsedTime, sc = SCEN[state.scen];
+  state.t = Math.min(state.t + dt, DUR);
+  if (state.playing && state.t >= DUR) next();
+  const p = state.t / DUR;
+  stepBtns[state.step].style.setProperty('--p', state.playing ? p : 1);
+
+  const v = state.step < 3 ? sc.from : state.step === 3 ? sc.from + (sc.to - sc.from) * ease(Math.min(1, p * 1.3)) : sc.to;
+  $('#hudVal').textContent = Math.round(v) + ' kW';
+  const done = state.step === 4 || (state.step === 3 && p >= 0.75);
+  const chip = $('#hudChip'); chip.textContent = done ? saveTxt(sc) : state.step === 3 ? sc.status[1] : sc.status[0];
+  chip.style.setProperty('--sev', done ? 'var(--ok)' : 'var(--warn)');
+
+  // actuators
+  for (const a in state.act) { const want = (state.step >= 3 && sc.act.includes(a)) ? 1 : 0; state.act[a] += (want - state.act[a]) * Math.min(1, dt * 1.5); }
+  const A = state.act, spin = reduce ? 0 : 1;
+  const ahuSpeed = 1 - 0.35 * A.ahu;
+  ahuFans.forEach(f => f.rotation.y += dt * 14 * ahuSpeed * spin);
+  const towerSpeed = 1 + 0.7 * (state.scen === 'mild' ? A.tower : 0);
+  towerFans.forEach(f => f.rotation.y += dt * 7 * towerSpeed * spin);
+  F.air.forEach((f, k) => { f.target = k === 2 ? 0.85 * (1 - 0.8 * A.vav3) : 0.85; f.rate = ahuSpeed; });
+  VAV[2].material.color.set(A.vav3 > 0.5 ? 0xf0a43a : 0x3fd17a);
+  // floor 3 empty in the "empty floor" story
+  state.f3 += ((state.scen === 'empty' ? 0 : 1) - state.f3) * Math.min(1, dt * 2);
+  PEOPLE[2].scale.set(1, Math.max(0.001, state.f3), 1); PEOPLE[2].visible = state.f3 > 0.02;
+  LIGHTS.forEach(l => { if (l.f === 2) { l.m.material.emissiveIntensity = 0.15 + 0.75 * state.f3; } });
+  // chillers: in the sequencing story chiller 2 switches off
+  const ch2off = state.scen === 'seq' ? A.chiller : 0;
+  CH[1].led.material.color.set(ch2off > 0.5 ? 0xd9534f : 0x3fd17a);
+  CH[1].evap.material.color.copy(CH[1].base).lerp(new THREE.Color(0x6b7780), ch2off);
+  CH[0].led.material.color.set(0x3fd17a);
+  F.ch2.target = 0.9 * (1 - ch2off); F.chw.target = 0.9; F.cw.target = 0.9;
+  const pumpRate = 1 - 0.3 * (state.scen === 'seq' ? A.pumps : 0);
+  F.chw.rate = F.cw.rate = pumpRate;
+  PUMPS.forEach((l, k) => l.material.color.set(k === 2 && state.scen === 'seq' && A.pumps > 0.5 ? 0x6b7780 : (Math.sin(T * 6 * pumpRate + k) > -0.3 ? 0x3fd17a : 0x1c5a34)));
+  if (!reduce) {
+    for (let i = 0; i < plume.n; i++) { plume.pos[i*3+1] += dt * (0.8 + (i % 5) * 0.15) * towerSpeed; plume.pos[i*3] -= dt * 0.25; if (plume.pos[i*3+1] > ROOF + 6) plume.spawn(plume.pos, i, false); }
+    plume.p.geometry.attributes.position.needsUpdate = true; cups.rotation.y += dt * 3;
+  }
+  plume.p.material.opacity = 0.22 + 0.15 * (towerSpeed - 1);
+  // sensors and controller
+  for (const k in SENS) { const s = SENS[k], hot = k === sc.sensor;
+    s.glow.scale.setScalar(hot && state.step <= 1 ? 0.8 + 0.2 * Math.sin(T * 5) : state.step === 0 ? 0.5 + 0.22 * Math.sin(T * 6 + s.pos.x) : 0.32); }
+  gwLed.material.color.set((state.step === 1 || state.step === 3) && Math.sin(T * 14) > 0 ? 0x26c2ff : 0x1d4050);
+  meterScr.material.color.set(sc.sensor === 'meter' && state.step === 0 && Math.sin(T * 6) > 0 ? 0xffc04d : 0x26c2ff);
+  // AI core
+  const thinking = state.step === 2;
+  core.rotation.y += dt * (thinking ? 2.2 : 0.4) * spin; core.rotation.x += dt * (thinking ? 1.1 : 0.2) * spin;
+  coreIn.scale.setScalar(1 + (thinking ? 0.18 * Math.sin(T * 8) : 0));
+  rings.forEach((r, k) => { const ph = (T * 0.7 + k / 3) % 1; r.scale.setScalar(1 + ph * 2.2); r.material.opacity = thinking ? (1 - ph) * 0.8 : 0; r.lookAt(camera.position); });
+  phone.position.y = PHONE.y + (reduce ? 0 : Math.sin(T * 1.4) * 0.15);
+  phone.lookAt(tmp.copy(camera.position).setY(phone.position.y + 1));
+  phone.scale.setScalar(state.step === 4 ? 1.08 : 1);
+
+  flows.forEach(f => f.update(dt));
+  controls.update();
+  renderer.render(scene, camera);
+
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const L of labels) {
+    tmp.copy(L.pos).project(camera);
+    const vis = L.on && tmp.z < 1 && Math.abs(tmp.x) < 1.1 && Math.abs(tmp.y) < 1.1;
+    L.el.classList.toggle('on', vis);
+    if (!vis) continue;
+    const hw = L.el.offsetWidth / 2 + 6, px = Math.max(hw, Math.min(w - hw, (tmp.x + 1) / 2 * w));
+    L.el.style.transform = `translate(${px.toFixed(1)}px, ${((1 - tmp.y) / 2 * h).toFixed(1)}px) translate(-50%, calc(-100% - 8px))`;
+  }
+  requestAnimationFrame(frame);
+}
+setScen('empty');
+frame();
+})();
+</script>
+
+</body></html>

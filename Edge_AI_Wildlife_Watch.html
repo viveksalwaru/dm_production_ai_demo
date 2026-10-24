@@ -1,0 +1,813 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Edge AI Wildlife Watch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a 3D leopard corridor with four solar camera poles, each carrying its own edge AI node, plus a siren, a ranger post and the cloud, on one stage; a step rail, the caption, then parts, edge vs fog, and what edge AI does. */
+:root{
+  --bg:#f1f4f1; --surface:#ffffff; --ink:#141c17; --muted:#56645b; --line:#d7e0d9;
+  --accent:#2e7d4f; --accent-ink:#ffffff;
+  --read:#0f9bd7; --cmd:#1fae55; --msg:#d83a83; --ai:#6a55e6; --warn:#d9861a; --ok:#14894f;
+  --p1:#38b6d8; --p2:#d9a441; --p3:#e0563f;
+  --sky:#cfdde6; --ground:#5b7a48;
+  --font-display:"Sora", "Segoe UI", system-ui, sans-serif;
+  --font-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a100d; --surface:#111a15; --ink:#e0ebe4; --muted:#91a598; --line:#22332a;
+  --accent:#4cc782; --accent-ink:#04140b;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --p1:#5fd0f0; --p2:#f0bb5b; --p3:#ff7a62;
+  --sky:#081009; --ground:#16231a; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0a100d; --surface:#111a15; --ink:#e0ebe4; --muted:#91a598; --line:#22332a;
+  --accent:#4cc782; --accent-ink:#04140b;
+  --read:#3cb8ee; --cmd:#3fd17a; --msg:#f0619f; --ai:#9785ff; --warn:#f0a43a; --ok:#3dbd74;
+  --p1:#5fd0f0; --p2:#f0bb5b; --p3:#ff7a62;
+  --sky:#081009; --ground:#16231a; color-scheme:dark }
+
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:18px}
+header{display:grid;gap:6px;max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.4vw,44px);line-height:1.06;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:0;font-size:17px}
+
+.stage{position:relative;height:clamp(460px,66vh,700px);border-radius:18px;overflow:hidden;background:var(--sky);border:1px solid var(--line);touch-action:none}
+.stage canvas{display:block;width:100%;height:100%;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;white-space:nowrap;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:5px 9px 5px 8px;font-size:12.5px;line-height:1.25;box-shadow:0 4px 14px rgba(0,0,0,.12);opacity:0;transition:opacity .45s;display:flex;gap:7px;align-items:center}
+.lbl.on{opacity:1}
+.lbl i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c,var(--read))}
+.lbl b{font-weight:700}
+.lbl span{color:var(--muted)}
+.lbl em{font-style:normal;font-weight:700;color:var(--c,var(--read));font-variant-numeric:tabular-nums}
+.lbl::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+
+.hud{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:grid;gap:2px;min-width:190px;box-shadow:0 6px 18px rgba(0,0,0,.1)}
+.hud .sc{font-size:12px;color:var(--muted)}
+.hud .mv{font-family:var(--font-display);font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.hud .ml{font-size:12px;color:var(--muted)}
+.hud .cf{font-size:12px;color:var(--ok);font-weight:700}
+.chip{justify-self:start;margin-top:4px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--sev) 16%,transparent);color:var(--sev)}
+.think{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:12px;width:min(320px,calc(100% - 24px));background:var(--surface);border:1px solid var(--ai);border-radius:14px;padding:12px 14px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.12);opacity:0;transform:translateY(-6px);transition:opacity .4s,transform .4s;pointer-events:none}
+.think.on{opacity:1;transform:none}
+.think .h{font-weight:700;color:var(--ai);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.think ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.think li{display:grid;grid-template-columns:18px 1fr auto;gap:6px;align-items:start;font-size:13px}
+.think li .m{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px}
+.think li.y .m{background:var(--ok)}
+.think li.n .m{background:var(--muted)}
+.think li.n{color:var(--muted)}
+.think li .s{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ok)}
+.think li.n .s{color:var(--muted);font-weight:400}
+.legend{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;right:12px;display:flex;gap:6px 12px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 24px);background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:12px}
+.legend span{display:flex;gap:6px;align-items:center}
+.legend i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.legend i.p{border-radius:2px;height:5px;width:14px}
+.parts-btn{all:unset;cursor:pointer;position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;display:flex;gap:7px;align-items:center}
+.parts-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.parts-btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.rail{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
+.step{all:unset;cursor:pointer;position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.step:focus-visible,.ctl:focus-visible,.scen button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.step .n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.step .t{font-family:var(--font-display);font-weight:800;font-size:16px}
+.step .bar{position:absolute;left:0;bottom:0;height:3px;width:calc(var(--p,0)*100%);background:var(--accent)}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ctrls{display:flex;gap:8px}
+.ctl{all:unset;cursor:pointer;display:grid;place-items:center;width:52px;min-height:52px;border-radius:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-sizing:border-box}
+.ctl:hover{border-color:var(--accent)}
+.ctl svg{width:20px;height:20px}
+.ctl.next{width:auto;padding:0 16px;grid-auto-flow:column;gap:6px;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0}
+
+.below{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px}
+.caption{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:grid;gap:8px;align-content:start}
+.caption h2{font-family:var(--font-display);font-size:24px;line-height:1.15;margin:0;text-wrap:balance}
+.caption p{margin:0;max-width:62ch}
+.caption .ex{border-top:1px dashed var(--line);padding-top:10px}
+.caption .ex b{color:var(--accent)}
+.side{display:grid;gap:10px;align-content:start}
+.side h3{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.scen{display:grid;gap:8px}
+.scen button{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.scen button .d{grid-row:span 2;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.scen button b{font-weight:700}
+.scen button small{color:var(--muted);font-size:13px;grid-column:2}
+.scen button .sv{grid-row:1/span 2;grid-column:3;font-weight:700;color:var(--ok);font-size:13px;font-variant-numeric:tabular-nums}
+.scen button[aria-pressed="true"]{border-color:var(--accent)}
+.scen button[aria-pressed="true"] .d{background:var(--accent)}
+
+.sec{display:grid;gap:12px;margin-top:10px}
+.sec h2{font-family:var(--font-display);font-size:22px;margin:0}
+.sec .sub{margin:0;color:var(--muted);max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.part{border-top:3px solid var(--c);background:var(--surface);border-radius:4px 4px 14px 14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.part b{font-family:var(--font-display);font-size:17px}
+.part p{margin:0;color:var(--muted);font-size:14.5px}
+.part ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.lever{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.lever b{font-family:var(--font-display);font-size:16.5px}
+.lever p{margin:0;color:var(--muted);font-size:14.5px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.fallback{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+@media (max-width:760px){
+  .rail{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .ctrls{grid-column:1/-1}
+  .ctrls>button{flex:1;min-height:44px}
+  .step{padding:8px 6px;text-align:center}
+  .step .t{font-size:13px}
+  .below{grid-template-columns:minmax(0,1fr)}
+  .stage{height:520px}
+  .hud{min-width:0;padding:8px 11px}
+  .hud .mv{font-size:22px}
+  .legend{font-size:11px;gap:4px 8px;bottom:52px}
+  .lbl{font-size:11px;padding:4px 7px}
+  .lbl span{display:none}
+  .think{top:auto;bottom:52px}
+}
+@media (prefers-reduced-motion: reduce){.lbl,.think{transition:none}}
+
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Wildlife Surveillance · Edge Computing</div>
+    <h1>A small AI computer on every camera pole keeps leopards and villagers apart</h1>
+    <p class="lede">Junnar leopard corridor: four solar camera poles, each with its own edge AI node. The animal is recognised right on the pole, the siren fires in a fraction of a second, and only a tiny alert travels to the cloud and the rangers. Drag to turn the 3D view.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of a forest corridor with four camera poles carrying edge AI boxes, a leopard, a siren tower near a village, a ranger post with a radio mast, a cloud and a phone"></canvas>
+    <div class="overlay" id="overlay"></div>
+    <div class="hud" aria-live="polite">
+      <div class="sc" id="hudScen"></div>
+      <div class="mv" id="hudVal"></div>
+      <div class="ml" id="hudLbl"></div>
+      <div class="chip" id="hudChip"></div>
+      <div class="cf" id="hudNote"></div>
+    </div>
+    <div class="think" id="think"></div>
+    <div class="legend" aria-label="Colours">
+      <span style="--c:var(--read)"><i></i>Readings</span>
+      <span style="--c:var(--cmd)"><i></i>Instructions</span>
+      <span style="--c:var(--msg)"><i></i>Messages</span>
+      <span style="--c:var(--p1)"><i class="p"></i>Camera video</span><span style="--c:var(--p3)"><i class="p"></i>Siren trigger</span><span style="--c:var(--p2)"><i class="p"></i>Backup radio</span>
+    </div>
+    <button class="parts-btn" id="partsBtn" aria-pressed="false">Label all parts</button>
+  </div>
+
+  <nav class="rail" aria-label="Steps">
+    <button class="step" data-i="0"><span class="n">Step 1</span><span class="t">See</span><span class="bar"></span></button><button class="step" data-i="1"><span class="n">Step 2</span><span class="t">Think on the pole</span><span class="bar"></span></button><button class="step" data-i="2"><span class="n">Step 3</span><span class="t">Act locally</span><span class="bar"></span></button><button class="step" data-i="3"><span class="n">Step 4</span><span class="t">Report</span><span class="bar"></span></button><button class="step" data-i="4"><span class="n">Step 5</span><span class="t">Tell rangers</span><span class="bar"></span></button>
+    <div class="ctrls">
+      <button class="ctl" id="repeat" aria-label="Repeat this step" title="Repeat this step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+      <button class="ctl" id="play" aria-label="Pause" title="Play / pause"></button>
+      <button class="ctl next" id="next" aria-label="Next step">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </nav>
+
+  <section class="below">
+    <article class="caption" aria-live="polite">
+      <h2 id="capT"></h2>
+      <p id="capD"></p>
+      <p class="ex" id="capX"></p>
+    </article>
+    <aside class="side">
+      <h3>Pick a situation</h3>
+      <div class="scen" id="scen"></div>
+    </aside>
+  </section>
+
+  <section class="sec">
+    <h2>The main parts, in plain words</h2>
+    <div class="grid">
+      <div class="part" style="--c:var(--p1)"><b>Solar camera poles</b><p>Four cameras with infrared light watch the corridor day and night, powered by a solar panel and battery.</p></div><div class="part" style="--c:var(--accent)"><b>Edge AI node</b><p>A small, rugged computer on each pole. It runs the animal-recognition model on every frame, right there.</p></div><div class="part" style="--c:var(--p1)"><b>Mesh radio links</b><p>Nearby nodes can pass video to each other, so a working node can cover for a broken one.</p></div><div class="part" style="--c:var(--p3)"><b>Siren and lights</b><p>Scare the animal away from the village. Triggered straight from the node, with no internet needed.</p></div><div class="part" style="--c:var(--p2)"><b>Backup radio</b><p>A long-range radio link to the ranger post for when the internet is down.</p></div><div class="part" style="--c:var(--ai)"><b>Cloud gateway</b><p>Receives small alerts, keeps the record, watches node health and sends updates.</p></div><div class="part" style="--c:var(--msg)"><b>Ranger app</b><p>Shows the alert, the photo and a map pin on the rangers’ phones.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Edge or fog?</h2>
+    <p class="sub">Both keep the AI close to the forest, so the siren does not wait for the internet. They differ in where the AI computer sits.</p>
+    <div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:560px;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14.5px">
+      <thead><tr style="text-align:left;background:color-mix(in srgb,var(--accent) 10%,transparent)"><th style="padding:10px 14px"></th><th style="padding:10px 14px">Edge computing</th><th style="padding:10px 14px">Fog computing</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:10px 14px;border-top:1px solid var(--line);font-weight:700">Where the AI runs</td><td style="padding:10px 14px;border-top:1px solid var(--line)">A small computer on every camera pole</td><td style="padding:10px 14px;border-top:1px solid var(--line)">One powerful workstation near the forest</td></tr>
+        <tr><td style="padding:10px 14px;border-top:1px solid var(--line);font-weight:700">Cables needed</td><td style="padding:10px 14px;border-top:1px solid var(--line)">Only power (solar); no video cables</td><td style="padding:10px 14px;border-top:1px solid var(--line)">Network cable or radio link from every camera</td></tr>
+        <tr><td style="padding:10px 14px;border-top:1px solid var(--line);font-weight:700">If one computer fails</td><td style="padding:10px 14px;border-top:1px solid var(--line)">Only that camera is affected; a neighbour can take over</td><td style="padding:10px 14px;border-top:1px solid var(--line)">All cameras stop being checked until it is fixed</td></tr>
+        <tr><td style="padding:10px 14px;border-top:1px solid var(--line);font-weight:700">Upgrading the AI model</td><td style="padding:10px 14px;border-top:1px solid var(--line)">Update every node</td><td style="padding:10px 14px;border-top:1px solid var(--line)">Update one machine</td></tr>
+        <tr><td style="padding:10px 14px;border-top:1px solid var(--line);font-weight:700">Best for</td><td style="padding:10px 14px;border-top:1px solid var(--line)">Remote, spread-out sites with weak signal</td><td style="padding:10px 14px;border-top:1px solid var(--line)">Cameras close together near one building</td></tr>
+      </tbody></table></div>
+  </section>
+  <section class="sec">
+    <h2>What the edge AI does</h2>
+    <p class="sub">Putting the AI on the pole means decisions happen where the animal is, not in a far-away data centre.</p>
+    <div class="grid">
+      <div class="lever"><b>Recognises animals in a blink</b><p>Each frame is checked on the pole in milliseconds, day or night.</p></div><div class="lever"><b>Works without internet</b><p>The siren and lights do not depend on a network connection.</p></div><div class="lever"><b>Sends tiny alerts, not video</b><p>A 40 KB snapshot and location instead of megabytes of video saves data and battery.</p></div><div class="lever"><b>Covers for a failed neighbour</b><p>If one node crashes, the mesh routes its camera to the next node.</p></div><div class="lever"><b>Ignores false alarms</b><p>Cattle, dogs, people and swaying branches do not set off the siren.</p></div><div class="lever"><b>Gets smarter over time</b><p>Improved models are sent to all nodes overnight from the cloud.</p></div>
+    </div>
+    <p class="note">Place names follow your console; times, sizes and percentages are examples.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $ = (s) => document.querySelector(s);
+const stage = $('#stage'), overlay = $('#overlay'), canvas = $('#c');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const DUR = 7;
+const fmt = (m, v) => (m.prefix || '') + (m.dec ? v.toFixed(m.dec) : Math.round(v).toLocaleString('en-IN')) + m.unit;
+
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias:true }); }
+catch(e){ stage.insertAdjacentHTML('beforeend','<div class="fallback">This browser could not start the 3D view. The steps below still explain each stage.</div>'); }
+if (!renderer) return;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
+const flows = [], labels = [];
+const V = (x,y,z) => new THREE.Vector3(x,y,z);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.enablePan = false;
+controls.minDistance = 18; controls.maxDistance = 150; controls.maxPolarAngle = 1.48;
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a9a7a, 0.75); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 0.95);
+sun.position.set(20, 40, 24); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-44, right:44, top:44, bottom:-44, near:1, far:140 });
+scene.add(sun);
+
+const std = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness:0.8, metalness:0.05 }, o));
+const mesh = (geo, mat, x=0, y=0, z=0, parent=scene) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+const box = (w, h, d, color, x, y, z, parent) => mesh(new THREE.BoxGeometry(w, h, d), typeof color === 'number' ? std(color) : color, x, y, z, parent);
+const sphere = new THREE.SphereGeometry(1, 14, 10);
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.35,'rgba(255,255,255,.8)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+function particles(n, color, size, spawn) {
+  const geo = new THREE.BufferGeometry(); const pos = new Float32Array(n*3);
+  for (let i = 0; i < n; i++) spawn(pos, i, true);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color, size, map:dotTex, transparent:true, opacity:0, depthWrite:false });
+  const p = new THREE.Points(geo, mat); scene.add(p); return { p, pos, n, spawn };
+}
+const flat = (w, d, color, x, z, y = 0.02) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), typeof color === 'number' ? std(color, { roughness:1 }) : color); m.rotation.x = -Math.PI/2; m.position.set(x, y, z); m.receiveShadow = true; scene.add(m); return m; };
+const curve = (pts, closed = false) => new THREE.CatmullRomCurve3(pts, closed, 'centripetal');
+function person(shirt, x = 0, z = 0) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+  mesh(new THREE.CylinderGeometry(0.22, 0.25, 1, 10), std(shirt), 0, 0.65, 0, g);
+  mesh(sphere, std(0xe0b48f), 0, 1.35, 0, g).scale.setScalar(0.18);
+  return g;
+}
+function truck(color = 0x2f6fb3, trailer = 0xeef0f1, len = 6) {
+  const g = new THREE.Group(); scene.add(g);
+  box(len, 2.2, 2.2, trailer, -len / 2 - 0.2, 1.5, 0, g);
+  box(1.6, 1.8, 2.1, color, 0.9, 1.3, 0, g);
+  box(0.05, 0.7, 1.7, 0x203040, 1.72, 1.65, 0, g);
+  for (const x of [-len + 0.6, -len + 1.6, 0.9]) for (const z of [-0.95, 0.95]) mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.3, 14), std(0x222222), x, 0.4, z, g).rotation.x = Math.PI/2;
+  return g;
+}
+
+class Flow {
+  constructor(pts, kind, n = 4, speed = 0.32, size = 0.2, line = true) {
+    this.curve = curve(pts);
+    this.kind = kind; this.speed = speed; this.on = 0; this.target = 0; this.off = Math.random(); this.rate = 1;
+    this.lineMat = new THREE.LineDashedMaterial({ color:0xffffff, dashSize:0.35, gapSize:0.28, transparent:true, opacity:0, depthWrite:false });
+    this.line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(this.curve.getPoints(100)), this.lineMat);
+    this.line.computeLineDistances(); this.hasLine = line; if (line) scene.add(this.line);
+    this.dots = [];
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 8), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0 }));
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:0xffffff, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }));
+      g.scale.setScalar(size * 5); m.add(g); scene.add(m); this.dots.push({ m, g });
+    }
+    flows.push(this);
+  }
+  color(c) { this.lineMat.color.set(c); this.dots.forEach(d => { d.m.material.color.set(c); d.g.material.color.set(c); }); }
+  update(dt) {
+    this.on += (this.target - this.on) * Math.min(1, dt * 3.5);
+    if (!reduce) this.off = (this.off + dt * this.speed * this.rate) % 1;
+    const vis = this.on > 0.01;
+    this.line.visible = vis && this.hasLine; this.lineMat.opacity = this.on * 0.6;
+    this.dots.forEach((d, i) => { d.m.visible = vis; if (!vis) return;
+      const t = (this.off + i / this.dots.length) % 1; d.m.position.copy(this.curve.getPointAt(t));
+      const edge = Math.min(1, t * 8, (1 - t) * 8); d.m.material.opacity = this.on * edge; d.g.material.opacity = this.on * edge * 0.55; });
+  }
+}
+/* things that move along a path (robots, boxes, trucks) */
+class Mover {
+  constructor(obj, path, speed, offset = 0, face = true) { this.obj = obj; this.path = path; this.speed = speed; this.t = offset; this.face = face; this.rate = 1; movers.push(this); }
+  update(dt) {
+    if (!reduce) this.t = (this.t + dt * this.speed * this.rate) % 1;
+    const p = this.path.getPointAt(this.t); this.obj.position.x = p.x; this.obj.position.z = p.z; if (this.yFromPath) this.obj.position.y = p.y;
+    if (this.face) { const q = this.path.getPointAt((this.t + 0.002) % 1); this.obj.rotation.y = Math.atan2(-(q.z - p.z), q.x - p.x); }
+  }
+}
+const movers = [];
+const groundMat = std(0x8fa27a, { roughness:1 });
+const ground = new THREE.Mesh(new THREE.CircleGeometry(150, 48), groundMat); ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+
+const FONT_NAME = 'Sora';
+
+const STEPS = [
+  { t:'A camera spots movement', d:'Four solar-powered cameras watch the leopard corridor day and night, using infrared light in the dark.' },
+  { t:'The edge computer on the pole recognises the animal', d:'Each camera has its own small AI computer. It checks every frame right there, so no video has to travel over the internet.' },
+  { t:'The siren and lights go off in under a second', d:'Because the decision is made on the pole, the deterrent fires immediately and the leopard turns away from the village.' },
+  { t:'Only a small alert goes to the cloud', d:'The node sends a snapshot, the location and the confidence score, not the full video. That saves data and works on a weak signal.' },
+  { t:'Rangers get the alert on their phones', d:'The alert reaches the nearest ranger team with the photo and a map pin.' },
+];
+const SCEN = {
+  lek: { name:'Leopard at Lekurwadi', time:'11:42 PM', blurb:'Normal night, all nodes working', cam:0, gain:'0.3 s alarm',
+    metric:{ label:'Siren delay', from:4.2, to:0.3, unit:' s', dec:1 }, note:'Cloud-only design: about 4 s', mStep:2, tStep:1, cloudStep:3,
+    think:'Edge Node 01 runs the AI model right on the pole. It sees a leopard with 99.4 % confidence, without sending video anywhere.',
+    options:[['Sound the siren and lights now','0.3 s',1],['Send snapshot and location to the cloud','40 KB',1],['Stream the video to the cloud to decide','~4 s · 6 MB',0]],
+    flows:[['vid0'],[],['al0'],['up0'],['tell']],
+    labels:[['cam0','leo'],['node0','leo'],['siren','leo'],['cloud'],['phone','outpost']],
+    ex:['Camera 1 at Lekurwadi picks up a large animal crossing the trail at <b>11:42 PM</b>.',
+        'Edge Node 01 recognises a <b>leopard, 99.4 % sure</b>, in a fraction of a second, right on the pole.',
+        'The siren and lights fire after <b>0.3 seconds</b>. A cloud-only system would need about 4 seconds to upload and decide.',
+        'A 40 KB alert with the snapshot and location goes to the cloud, instead of a 6 MB video clip.',
+        'The nearest ranger team gets a push alert with the photo and a map pin for Lekurwadi.'],
+    phone:{ title:'Leopard at Lekurwadi', body:'Seen at 11:42 PM, 99.4 % match. Siren sounded. Photo and map pin attached.' },
+    status:['Leopard spotted','Siren on','Leopard leaving'] },
+  ghat: { name:'Node 03 crashed', time:'1:15 AM', blurb:'Ghatghar camera still watched', cam:2, gain:'4 of 4 covered',
+    metric:{ label:'Cameras being checked', from:3, to:4, unit:' of 4' }, note:'Edge Node 03 offline since 12:50 AM', mStep:1, tStep:1, cloudStep:3,
+    think:'Edge Node 03 has crashed, so Camera 3 has nobody checking it. Edge Node 02 next door has spare capacity.',
+    options:[['Route Camera 3 video to Node 02','coverage back',1],['Raise a repair ticket for Node 03','fix in daylight',1],['Leave Ghatghar unwatched','blind spot',0]],
+    flows:[['vid2'],['reroute'],['al1'],['up1'],['tell']],
+    labels:[['cam2','node2','leo'],['node1','cam2','leo'],['siren','leo'],['cloud','node2'],['phone']],
+    ex:['A leopard walks past Camera 3 at Ghatghar Ridge. Its own edge node crashed at 12:50 AM, so this camera is not being checked.',
+        'The mesh sends Camera 3’s video by radio to <b>Edge Node 02</b> next door, which recognises the leopard.',
+        'Node 02 sounds the siren. All <b>4 of 4</b> cameras are being checked again.',
+        'Node 02 sends the alert to the cloud, along with a repair ticket for Node 03.',
+        'Rangers get the leopard alert, and the technician gets the repair job for Node 03.'],
+    phone:{ title:'Leopard at Ghatghar Ridge', body:'Detected by Node 02 because Node 03 is down. Siren sounded. Repair ticket raised for Node 03.' },
+    status:['Blind spot','Covered','Covered'] },
+  offline: { name:'Internet down', time:'3:05 AM', blurb:'Edge keeps working offline', cam:3, gain:'0 alerts lost',
+    metric:{ label:'Alerts lost', from:1, to:0, unit:'' }, note:'Cloud link down since 2:40 AM', mStep:3, tStep:1, cloudStep:-1,
+    think:'Edge Node 04 sees a leopard at Nimgiri. The internet is down, but the node does not need it to decide or to sound the siren.',
+    options:[['Sound the siren locally','works offline',1],['Send a short alert over the backup radio','reaches rangers',1],['Wait for the internet to return','rangers not told',0]],
+    flows:[['vid3'],[],['al3'],['radio'],['radio2']],
+    labels:[['cam3','leo','netdown'],['node3','leo'],['siren','leo'],['mast','netdown'],['phone','outpost']],
+    ex:['Camera 4 at Nimgiri Slope sees a leopard near the village path. The internet link has been down since 2:40 AM.',
+        'Edge Node 04 does not need the internet to think. It recognises the leopard on the pole, <b>99.1 % sure</b>.',
+        'The siren sounds straight away, exactly as it would with the internet working.',
+        'The cloud cannot be reached, so the node sends a short text alert over the <b>backup radio</b> to the ranger post.',
+        'Rangers get the alert from the radio link. The full report reaches the cloud when the internet returns.'],
+    phone:{ title:'Leopard at Nimgiri (radio)', body:'Sent over backup radio at 3:05 AM while the internet was down. Siren sounded locally.' },
+    status:['Internet down','Alert sent','Alert delivered'] },
+};
+const ORDER = ['lek','ghat','offline'];
+const AMBIENT = { hb0:0.35, hb1:0.35, hb3:0.35 };
+const THINK_HEAD = 'Edge AI is deciding';
+const AI_WHAT = 'Records alerts · watches nodes';
+const PHONE_THEME = { head:'#123322', light:'#a8e0bf', title:'Wildlife Alert', sub:'Junnar leopard corridor', who:'Ranger team', ask:'Where was it last seen?', idleTitle:'Corridor quiet', idleBody:'Edge nodes are watching 4 cameras.' };
+
+
+/* ---------- forest corridor (shared by edge and fog pages) ---------- */
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+ground.visible = false;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+sun.position.set(-26, 30, 20); sun.intensity = 1.05; sun.color.set(0xffe9c8);
+hemi.color.set(0xdfeeff); hemi.groundColor.set(0x5a4a32);
+
+/* rolling terrain: flat in the middle, hills at the edges, colour patches */
+const tGeo = new THREE.PlaneGeometry(190, 190, 120, 120); tGeo.rotateX(-Math.PI / 2);
+const tp = tGeo.attributes.position, tCol = new Float32Array(tp.count * 3);
+const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const n2 = (x, z) => Math.sin(x * 0.11) * Math.cos(z * 0.09) + 0.5 * Math.sin(x * 0.23 + z * 0.17) + 0.25 * Math.cos(x * 0.47 - z * 0.39);
+const cA = new THREE.Color(0x5f7f3e), cB = new THREE.Color(0x8a9a4c), cC = new THREE.Color(0x7a6a44), cD = new THREE.Color(0x4a6a34);
+for (let i = 0; i < tp.count; i++) {
+  const x = tp.getX(i), z = tp.getZ(i), d = Math.hypot(x - 2, z + 2);
+  const h = smooth(30, 70, d) * (5 + 4 * n2(x, z)) + 0.06 * Math.sin(x * 1.3) * Math.cos(z * 1.1);
+  tp.setY(i, h);
+  const k = 0.5 + 0.5 * n2(x * 2.1, z * 2.3), dry = 0.5 + 0.5 * Math.sin(x * 0.31 + 1.7) * Math.cos(z * 0.27);
+  const c = cA.clone().lerp(cB, k * 0.7).lerp(cD, smooth(30, 70, d) * 0.6).lerp(cC, Math.max(0, dry - 0.72) * 2.2);
+  tCol[i * 3] = c.r; tCol[i * 3 + 1] = c.g; tCol[i * 3 + 2] = c.b;
+}
+tGeo.setAttribute('color', new THREE.BufferAttribute(tCol, 3)); tGeo.computeVertexNormals();
+const terrainMat = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:1, metalness:0 });
+const terrain = new THREE.Mesh(tGeo, terrainMat); terrain.receiveShadow = true; scene.add(terrain);
+function onTheme(dark) { terrainMat.color.set(dark ? 0x7d8a80 : 0xffffff); }
+
+/* organic shapes: jitter a polyhedron by position so shared corners stay joined */
+function blob(r, detail = 1, amt = 0.28) {
+  const g = new THREE.IcosahedronGeometry(r, detail), p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const k = 1 + amt * (Math.sin(x * 12.9 + y * 7.3) * Math.cos(z * 9.1 - x * 3.7)); p.setXYZ(i, x * k, y * k * 0.92, z * k); }
+  g.computeVertexNormals(); return g;
+}
+const leafMats = [0x3f6b2c, 0x4d7a32, 0x5c8a3a, 0x37602a, 0x6b8f3e].map(c => new THREE.MeshStandardMaterial({ color:c, roughness:0.95, flatShading:true }));
+const pineMats = [0x2c5530, 0x34603a, 0x2a4d2f].map(c => new THREE.MeshStandardMaterial({ color:c, roughness:0.95, flatShading:true }));
+const barkMat = new THREE.MeshStandardMaterial({ color:0x5b4430, roughness:1, flatShading:true });
+const rockMat = new THREE.MeshStandardMaterial({ color:0x8a877c, roughness:1, flatShading:true });
+const CAMS = [
+  { name:'Lekurwadi', pos:V(-18, 0, -8), dir:V(1, 0, 0.35).normalize(), escape:V(-0.7, 0, -1) },
+  { name:'Aamboli Pass', pos:V(-6, 0, -14), dir:V(0.25, 0, 1).normalize(), escape:V(-1, 0, 0.2) },
+  { name:'Ghatghar Ridge', pos:V(6, 0, -13), dir:V(-0.2, 0, 1).normalize(), escape:V(-1, 0, -0.25) },
+  { name:'Nimgiri Slope', pos:V(-12, 0, 7), dir:V(1, 0, -0.3).normalize(), escape:V(-0.6, 0, 1) },
+];
+CAMS.forEach(c => c.spot = c.pos.clone().add(c.dir.clone().multiplyScalar(5.5)));
+const clear = (x, z) => CAMS.some(c => Math.hypot(c.spot.x - x, c.spot.z - z) < 6 || Math.hypot(c.pos.x - x, c.pos.z - z) < 2.2)
+  || (x > 12 && z > 0) || (x > 16 && z < -4) || (Math.abs(x - 2) < 7.5 && Math.abs(z - 1) < 6.5);
+const heightAt = (x, z) => { const d = Math.hypot(x - 2, z + 2); return smooth(30, 70, d) * (5 + 4 * n2(x, z)); };
+function broadleaf(x, z, s) {
+  const y0 = heightAt(x, z), g = new THREE.Group(); g.position.set(x, y0, z); g.rotation.y = rnd() * 6.28; scene.add(g);
+  const tr = mesh(new THREE.CylinderGeometry(0.1 * s, 0.2 * s, 2.4 * s, 6), barkMat, 0, 1.2 * s, 0, g); tr.rotation.z = (rnd() - 0.5) * 0.12;
+  const n = 3 + Math.floor(rnd() * 3), m = leafMats[Math.floor(rnd() * leafMats.length)];
+  for (let i = 0; i < n; i++) { const a = i / n * 6.28 + rnd(), rr = (0.4 + rnd() * 0.5) * s;
+    const b = mesh(blob((0.8 + rnd() * 0.5) * s), m, Math.cos(a) * rr, (2.6 + rnd() * 0.9) * s, Math.sin(a) * rr, g); b.scale.y = 0.8; }
+  mesh(blob(1.0 * s), m, 0, 3.4 * s, 0, g).scale.y = 0.85;
+}
+function pine(x, z, s) {
+  const y0 = heightAt(x, z), g = new THREE.Group(); g.position.set(x, y0, z); g.rotation.y = rnd() * 6.28; scene.add(g);
+  mesh(new THREE.CylinderGeometry(0.08 * s, 0.16 * s, 1.6 * s, 6), barkMat, 0, 0.8 * s, 0, g);
+  const m = pineMats[Math.floor(rnd() * pineMats.length)];
+  for (let i = 0; i < 4; i++) { const r = (1.25 - i * 0.26) * s; const c = mesh(new THREE.ConeGeometry(r, 1.5 * s, 7), m, 0, (1.5 + i * 0.85) * s, 0, g); c.rotation.y = rnd(); }
+}
+function bush(x, z, s) { const y0 = heightAt(x, z), m = leafMats[Math.floor(rnd() * leafMats.length)];
+  for (let i = 0; i < 3; i++) mesh(blob((0.35 + rnd() * 0.25) * s), m, x + (rnd() - 0.5) * 0.8 * s, y0 + 0.3 * s, z + (rnd() - 0.5) * 0.8 * s).scale.y = 0.7; }
+function rock(x, z, s) { const r = mesh(blob(0.5 * s, 0, 0.35), rockMat, x, heightAt(x, z) + 0.15 * s, z); r.scale.y = 0.55; r.rotation.y = rnd() * 6; }
+for (let i = 0; i < 420; i++) {
+  const x = -60 + rnd() * 110, z = -55 + rnd() * 85; if (clear(x, z)) continue;
+  const d = Math.hypot(x - 2, z + 2), t = rnd();
+  if (d > 75) continue;
+  if (t < 0.42) broadleaf(x, z, 0.8 + rnd() * 0.7); else if (t < 0.72) pine(x, z, 0.8 + rnd() * 0.8); else if (t < 0.92) bush(x, z, 0.8 + rnd() * 0.8); else rock(x, z, 0.7 + rnd() * 1.4);
+}
+/* grass tufts (instanced) */
+const gGeo = new THREE.ConeGeometry(0.05, 0.42, 3); gGeo.translate(0, 0.21, 0);
+const gMat = new THREE.MeshLambertMaterial({ color:0xffffff, emissive:0x1c2410 });
+const grass = new THREE.InstancedMesh(gGeo, gMat, 2600); const dm = new THREE.Object3D(); let gi = 0;
+const gCols = [0x8fb04a, 0xa3b85a, 0xb8bf6a, 0x7fa042].map(c => new THREE.Color(c));
+while (gi < 2600) { const x = -32 + rnd() * 66, z = -28 + rnd() * 48;
+  if (Math.abs(x - 2) < 7 && Math.abs(z - 1) < 6) continue;
+  dm.position.set(x, heightAt(x, z), z); dm.rotation.set((rnd() - 0.5) * 0.4, rnd() * 6, (rnd() - 0.5) * 0.4); const s = 0.45 + rnd() * 0.6; dm.scale.set(s * 1.4, s, s * 1.4); dm.updateMatrix();
+  grass.setMatrixAt(gi, dm.matrix); grass.setColorAt(gi, gCols[gi % 4]); gi++; }
+grass.receiveShadow = true; scene.add(grass);
+
+/* village with gable-roof houses + siren tower */
+const roofShape = new THREE.Shape(); roofShape.moveTo(-1.3, 0); roofShape.lineTo(1.3, 0); roofShape.lineTo(0, 1.05); roofShape.lineTo(-1.3, 0);
+const roofGeo = new THREE.ExtrudeGeometry(roofShape, { depth:2.5, bevelEnabled:false }); roofGeo.translate(0, 0, -1.25);
+for (const [x, z, r, w] of [[21,9,0.3,0xefe3cc],[24.5,12,0.8,0xe8d6b8],[19.5,13.5,-0.2,0xf3ead8],[26,7.5,0.5,0xe2cfae]]) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = r; scene.add(g);
+  box(2.4, 1.7, 2.2, w, 0, 0.85, 0, g);
+  mesh(roofGeo, std(0xa84a32, { flatShading:true }), 0, 1.7, 0, g);
+  box(0.5, 0.95, 0.05, 0x5a3b26, 0.5, 0.48, 1.11, g); box(0.45, 0.4, 0.05, 0x3c4b57, -0.6, 1.05, 1.11, g);
+}
+flat(30, 1.8, 0xa89a7c, 18, 3, 0.05);
+const SIREN = V(15, 0, 4);
+box(0.18, 5.2, 0.18, 0x6b7378, SIREN.x, 2.6, SIREN.z);
+mesh(new THREE.ConeGeometry(0.45, 0.9, 12, 1, true), std(0xd9dcde, { side:THREE.DoubleSide }), SIREN.x + 0.45, 4.9, SIREN.z).rotation.z = Math.PI / 2;
+const sirenLight = mesh(new THREE.SphereGeometry(0.28, 12, 10), new THREE.MeshBasicMaterial({ color:0x551515 }), SIREN.x, 5.5, SIREN.z);
+const sirenRings = [0, 1, 2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 6, 40), new THREE.MeshBasicMaterial({ color:0xff4a3d, transparent:true, opacity:0 })); r.position.set(SIREN.x, 5, SIREN.z); r.rotation.x = Math.PI / 2; scene.add(r); return r; });
+/* ranger post: hut, jeep, radio mast */
+box(3.4, 2.2, 2.6, 0xc9b48a, 22, 1.1, -10); box(3.7, 0.2, 2.9, 0x4a5a3a, 22, 2.3, -10);
+const jeep = new THREE.Group(); jeep.position.set(19, 0, -7.5); jeep.rotation.y = 0.4; scene.add(jeep);
+box(2.6, 0.8, 1.4, 0x4f6b3a, 0, 0.75, 0, jeep); box(1.3, 0.6, 1.3, 0x3f5a2e, -0.3, 1.45, 0, jeep);
+for (const x of [-0.85, 0.85]) for (const z of [-0.72, 0.72]) mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.25, 12), std(0x222222), x, 0.35, z, jeep).rotation.x = Math.PI / 2;
+person(0x4f6b3a, 21, -7.2); person(0x4f6b3a, 22.2, -7.6);
+const MAST = V(24.5, 0, -12.5);
+box(0.14, 7, 0.14, 0x9aa0a6, MAST.x, 3.5, MAST.z); box(0.8, 0.12, 0.12, 0x9aa0a6, MAST.x, 6.6, MAST.z);
+/* camera poles */
+CAMS.forEach((c, i) => {
+  c.head = c.pos.clone().add(V(0, 3.4, 0));
+  box(0.2, 3.6, 0.2, 0x6b7378, c.pos.x, 1.8, c.pos.z);
+  const pan = box(1, 0.05, 0.7, 0x1f3358, c.pos.x, 3.9, c.pos.z); pan.rotation.z = 0.4;
+  const cam = new THREE.Group(); cam.position.copy(c.head); cam.rotation.y = Math.atan2(-c.dir.z, c.dir.x); scene.add(cam);
+  box(0.9, 0.45, 0.45, 0xf2f4f5, 0.3, 0, 0, cam);
+  c.lens = mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.06, 12), new THREE.MeshBasicMaterial({ color:0x26c2ff }), 0.77, 0, 0, cam); c.lens.rotation.z = Math.PI / 2;
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(2.6, 6, 24, 1, true), new THREE.MeshBasicMaterial({ color:0x38e1ff, transparent:true, opacity:0.08, side:THREE.DoubleSide, depthWrite:false }));
+  cone.position.set(3.2, -1.2, 0); cone.rotation.z = Math.PI / 2 + 0.35; cam.add(cone); c.cone = cone;
+});
+
+/* ---------- animals: textured four-legged model ---------- */
+function coatTexture(base, belly, kind) {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256; const g = cv.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, base); gr.addColorStop(0.62, base); gr.addColorStop(0.85, belly); gr.addColorStop(1, belly);
+  g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
+  let s2 = 11; const r2 = () => (s2 = (s2 * 16807) % 2147483647) / 2147483647;
+  if (kind === 'leopard') {
+    for (let i = 0; i < 260; i++) { const x = r2() * 512, y = 12 + r2() * 190, r = 5 + r2() * 6;
+      g.fillStyle = 'rgba(150,95,30,0.55)'; g.beginPath(); g.ellipse(x, y, r, r * 0.8, 0, 0, 7); g.fill();
+      g.strokeStyle = '#2a1d10'; g.lineWidth = 2.6; for (let k = 0; k < 4; k++) { const a = k * 1.57 + r2() * 0.8; g.beginPath(); g.arc(x, y, r, a, a + 0.9 + r2() * 0.4); g.stroke(); } }
+    for (let i = 0; i < 120; i++) { g.fillStyle = '#2a1d10'; g.beginPath(); g.arc(r2() * 512, 200 + r2() * 50, 1.5 + r2() * 2, 0, 7); g.fill(); }
+  } else {
+    for (let i = 0; i < 140; i++) { g.fillStyle = 'rgba(250,244,230,0.85)'; g.beginPath(); g.arc(r2() * 512, 40 + r2() * 110, 2.5 + r2() * 2.5, 0, 7); g.fill(); }
+    g.fillStyle = 'rgba(60,35,20,0.5)'; g.fillRect(0, 0, 512, 14);
+  }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = THREE.RepeatWrapping; return t;
+}
+function makeAnimal(kind) {
+  const L = kind === 'leopard';
+  const tex = coatTexture(L ? '#c8913c' : '#a8693a', L ? '#efe2c4' : '#e8dcc6', kind);
+  const coat = new THREE.MeshStandardMaterial({ map:tex, roughness:0.92 });
+  const plain = new THREE.MeshStandardMaterial({ color:L ? 0xc8913c : 0xa8693a, roughness:0.92 });
+  const pale = new THREE.MeshStandardMaterial({ color:L ? 0xefe2c4 : 0xece2d0, roughness:0.92 });
+  const dark = new THREE.MeshStandardMaterial({ color:0x1d1510, roughness:0.6 });
+  const legLen = L ? 0.6 : 0.82, bodyY = legLen + 0.04;
+  const root = new THREE.Group(), bodyG = new THREE.Group(); root.add(bodyG);
+  const add = (geo, mat, x, y, z, sx, sy, sz, parent = bodyG) => { const m = mesh(geo, mat, x, y, z, parent); m.scale.set(sx, sy, sz); return m; };
+  if (L) {
+    add(sphere, coat, 0, bodyY, 0, 0.72, 0.27, 0.25);
+    add(sphere, coat, 0.42, bodyY + 0.04, 0, 0.34, 0.31, 0.27);
+    add(sphere, coat, -0.48, bodyY + 0.01, 0, 0.32, 0.28, 0.25);
+    add(sphere, coat, 0.74, bodyY + 0.16, 0, 0.22, 0.17, 0.16).rotation.z = 0.6;
+  } else {
+    add(sphere, coat, 0, bodyY, 0, 0.62, 0.27, 0.22);
+    add(sphere, coat, 0.36, bodyY + 0.04, 0, 0.3, 0.3, 0.22);
+    add(sphere, coat, -0.4, bodyY + 0.03, 0, 0.3, 0.29, 0.23);
+    add(new THREE.CylinderGeometry(0.08, 0.12, 0.6, 8), coat, 0.66, bodyY + 0.3, 0, 1, 1, 1).rotation.z = -0.75;
+    add(sphere, pale, -0.66, bodyY + 0.12, 0, 0.06, 0.1, 0.07);
+  }
+  const head = new THREE.Group(); head.position.set(L ? 0.95 : 0.9, bodyY + (L ? 0.24 : 0.56), 0); bodyG.add(head);
+  add(sphere, L ? coat : plain, 0, 0, 0, L ? 0.19 : 0.13, L ? 0.16 : 0.13, L ? 0.17 : 0.11, head);
+  add(sphere, pale, L ? 0.14 : 0.16, L ? -0.05 : -0.04, 0, L ? 0.11 : 0.12, L ? 0.08 : 0.06, L ? 0.1 : 0.07, head);
+  add(sphere, dark, L ? 0.24 : 0.27, L ? -0.03 : -0.03, 0, 0.03, 0.025, 0.035, head);
+  for (const z of [-1, 1]) {
+    add(sphere, dark, L ? 0.12 : 0.08, L ? 0.05 : 0.04, z * (L ? 0.11 : 0.08), 0.025, 0.02, 0.02, head);
+    const e = add(new THREE.ConeGeometry(L ? 0.06 : 0.05, L ? 0.1 : 0.2, 6), L ? plain : plain, L ? -0.03 : -0.04, L ? 0.15 : 0.12, z * (L ? 0.1 : 0.1), 1, 1, L ? 1 : 0.5, head);
+    e.rotation.x = z * (L ? 0.3 : 1.1);
+    if (!L && kind === 'stag') { const a = add(new THREE.CylinderGeometry(0.015, 0.025, 0.55, 5), new THREE.MeshStandardMaterial({ color:0xd8c8a8 }), -0.02, 0.38, z * 0.07, 1, 1, 1, head); a.rotation.x = z * 0.35; a.rotation.z = -0.25; }
+  }
+  const legs = [];
+  for (const [x, z] of [[0.42, -0.14], [0.42, 0.14], [-0.46, -0.14], [-0.46, 0.14]]) {
+    const piv = new THREE.Group(); piv.position.set(x, bodyY - 0.02, z * (L ? 1.15 : 0.95)); bodyG.add(piv);
+    add(sphere, coat, 0, -legLen * 0.25, 0, L ? 0.1 : 0.08, legLen * 0.32, L ? 0.09 : 0.07, piv);
+    add(new THREE.CylinderGeometry(L ? 0.05 : 0.03, L ? 0.045 : 0.025, legLen * 0.55, 6), L ? coat : plain, 0.02, -legLen * 0.68, 0, 1, 1, 1, piv);
+    add(sphere, L ? pale : dark, 0.04, -legLen + 0.03, 0, L ? 0.08 : 0.04, 0.045, L ? 0.07 : 0.04, piv);
+    legs.push(piv);
+  }
+  let tail = null;
+  if (L) { tail = new THREE.Group(); tail.position.set(-0.76, bodyY + 0.04, 0); bodyG.add(tail);
+    const tc = new THREE.CatmullRomCurve3([V(0, 0, 0), V(-0.35, -0.16, 0), V(-0.65, -0.32, 0), V(-0.88, -0.28, 0), V(-1.0, -0.12, 0)]);
+    const tm = new THREE.Mesh(new THREE.TubeGeometry(tc, 24, 0.045, 7), coat); tm.castShadow = true; tail.add(tm);
+    add(sphere, dark, -1.0, -0.1, 0, 0.055, 0.06, 0.055, tail); }
+  root.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return { root, bodyG, head, legs, tail, bodyY };
+}
+function animate(a, T, speed, moving) {
+  const k = reduce ? 0 : T * speed;
+  a.legs.forEach((l, i) => l.rotation.z = moving ? Math.sin(k + [0, Math.PI, Math.PI * 0.5, Math.PI * 1.5][i]) * 0.45 : 0);
+  a.bodyG.position.y = moving ? Math.abs(Math.sin(k)) * 0.03 : 0;
+  a.head.rotation.z = moving ? Math.sin(k * 0.5) * 0.06 : Math.sin(T * 0.7) * 0.1;
+  if (a.tail) { a.tail.rotation.y = Math.sin((reduce ? 0 : T) * 1.6) * 0.35; a.tail.rotation.z = 0.15 + Math.sin((reduce ? 0 : T) * 1.1) * 0.08; }
+}
+
+/* leopard: walks across a camera's view, then slips back into the forest when the siren sounds */
+const LEO = makeAnimal('leopard'); const leo = LEO.root; scene.add(leo); leo.scale.setScalar(1.35); leo.visible = false;
+const leoState = { u:0, flee:0, from:null };
+function updateLeo(dt, T, camIdx, show, fleeing) {
+  leo.visible = show && leoState.flee < 1.8;
+  if (!show) { leoState.flee = 0; leoState.from = null; return; }
+  const c = CAMS[camIdx], perp = V(-c.dir.z, 0, c.dir.x);
+  if (fleeing) { if (!leoState.from) leoState.from = leo.position.clone(); leoState.flee += dt; }
+  else { leoState.flee = 0; leoState.from = null; if (!reduce) leoState.u += dt * 0.22; }
+  let pos, heading;
+  if (fleeing) {
+    const away = c.escape.clone().normalize();
+    pos = leoState.from.clone().add(away.clone().multiplyScalar(leoState.flee * 6)); heading = away;
+  } else {
+    const w = Math.sin(leoState.u) * 2.4; pos = c.spot.clone().add(perp.clone().multiplyScalar(w));
+    heading = perp.clone().multiplyScalar(Math.cos(leoState.u) >= 0 ? 1 : -1);
+  }
+  leo.position.set(pos.x, heightAt(pos.x, pos.z), pos.z);
+  const target = Math.atan2(-heading.z, heading.x); let dA = target - leo.rotation.y; while (dA > Math.PI) dA -= 6.283; while (dA < -Math.PI) dA += 6.283;
+  leo.rotation.y += dA * Math.min(1, dt * 6);
+  animate(LEO, T, fleeing ? 13 : 6, true);
+}
+function sirenFx(T, on) {
+  sirenLight.material.color.set(on && Math.sin(T * 12) > 0 ? 0xff2a2a : 0x551515);
+  sirenRings.forEach((r, j) => { const q = (T * 0.9 + j / 3) % 1; r.scale.setScalar(1 + q * 6); r.material.opacity = on ? (1 - q) * 0.7 : 0; });
+}
+function camLook(T, idx, detecting, offline) {
+  CAMS.forEach((c, i) => {
+    const off = offline && offline.includes(i);
+    c.cone.visible = !off;
+    c.cone.material.color.set(i === idx && detecting ? 0xff4a3d : 0x38e1ff);
+    c.cone.material.opacity = i === idx && detecting ? 0.22 + 0.08 * Math.sin(T * 6) : 0.1;
+    c.lens.material.color.set(off ? 0x331111 : (i === idx && detecting ? 0xff4a3d : 0x26c2ff));
+  });
+}
+
+/* edge nodes on each pole */
+const NODES = CAMS.map((c, i) => { const p = c.pos.clone().add(c.dir.clone().multiplyScalar(-0.3)).add(V(0, 2.3, 0));
+  box(1.0, 1.2, 0.6, 0x2b3238, p.x, p.y, p.z); box(1.02, 0.12, 0.62, 0x2e7d4f, p.x, p.y + 0.45, p.z);
+  for (let k = 0; k < 4; k++) box(1.02, 0.04, 0.62, 0x59646c, p.x, p.y - 0.4 + k * 0.2, p.z);
+  const led = mesh(new THREE.SphereGeometry(0.14, 8, 6), new THREE.MeshBasicMaterial({ color:0x3fd17a }), p.x, p.y + 0.72, p.z);
+  return { p, led }; });
+const xMark = new THREE.Group(); scene.add(xMark);
+box(1.4, 0.18, 0.18, 0xff3b30, 0, 0, 0, xMark).rotation.z = 0.8; box(1.4, 0.18, 0.18, 0xff3b30, 0, 0, 0, xMark).rotation.z = -0.8;
+
+const CLOUD = V(2, 11.5, -19), CROT = 0.35;
+const PHONE = V(24, 9.5, -14);
+const CAM = { target:V(1, 1.5, -2), dir:V(14, 24, 32), dist:[44, 78] };
+const PARTS = ['cam0','cam1','cam2','cam3','node0','node1','node2','node3','siren','outpost','mast','village'];
+function setup() {
+  const CORE2 = CLOUD.clone().add(V(4 * Math.sin(CROT), 0.2, 4 * Math.cos(CROT)));
+  const up = (a, b, h) => [a.clone(), V(a.x, a.y + 2, a.z), V((a.x + b.x) / 2, Math.max(a.y, b.y) + h, (a.z + b.z) / 2), b.clone()];
+  NODES.forEach((n, i) => {
+    F['vid' + i] = new Flow([CAMS[i].head.clone(), n.p.clone().add(V(0, 0.4, 0))], 'p1', 2, 0.9, 0.12);
+    F['al' + i] = new Flow(up(n.p, V(SIREN.x, 5.2, SIREN.z), 4), 'p3', 4, 0.42, 0.18);
+    F['up' + i] = new Flow(up(n.p, CORE2, 3), 'read', 4, 0.3, 0.2);
+    if (i !== 2) F['hb' + i] = new Flow(up(n.p, CORE2, 3), 'dim', 2, 0.15, 0.09);
+  });
+  F.reroute = new Flow(up(CAMS[2].head, NODES[1].p, 3), 'p1', 4, 0.45, 0.17);
+  F.tell = new Flow([CORE2.clone().add(V(0.5, 0.3, 0.3)), V(18, 18, -14), PHONE.clone().add(V(-0.8, 0.8, 0))], 'msg', 4, 0.33, 0.25);
+  F.radio = new Flow(up(NODES[3].p, V(MAST.x, 6.8, MAST.z), 6), 'p2', 5, 0.32, 0.2);
+  F.radio2 = new Flow([V(MAST.x, 7, MAST.z), V(26, 10, -14), PHONE.clone().add(V(-0.6, -1.6, 0))], 'msg', 3, 0.4, 0.22);
+  CAMS.forEach((c, i) => { LB['cam' + i] = lab(c.head.clone().add(V(0, 0.9, 0)), 'Cam · ' + c.name, i === 2 ? 'camera works' : 'Infrared camera', 'var(--p1)');
+    LB['node' + i] = lab(NODES[i].p.clone().add(V(0, -1.6, 0)).add(c.dir.clone().multiplyScalar(-1.2)), 'Edge Node 0' + (i + 1), i === 2 ? 'Crashed' : (i === 1 ? 'Also covers Cam 3 if needed' : 'AI on the pole'), i === 2 ? 'var(--p3)' : 'var(--accent)'); });
+  LB.siren = lab(V(SIREN.x, 6.3, SIREN.z), 'Siren and lights', 'Scares the leopard away', 'var(--p3)');
+  LB.outpost = lab(V(22, 3, -10), 'Ranger post', '', 'var(--accent)');
+  LB.mast = lab(V(MAST.x, 7.6, MAST.z), 'Backup radio', 'Works without internet', 'var(--p2)');
+  LB.village = lab(V(23, 3.4, 11), 'Village', '', 'var(--accent)');
+  LB.leo = lab(V(0, 2, 0), 'Leopard', '', 'var(--p2)');
+  const mid = up(NODES[3].p, CORE2, 3)[2];
+  xMark.position.copy(mid); LB.netdown = lab(mid.clone().add(V(0, 0.8, 0)), 'Internet link down', '', 'var(--p3)');
+}
+function effects(dt, T, sc, A, step, key) {
+  updateLeo(dt, T, sc.cam, step <= 2 || (step === 3 && leoState.flee < 1.6), step >= 2);
+  LB.leo.pos.copy(leo.position).add(V(0, 1.6, 0));
+  sirenFx(T, step >= 2 && step <= 4);
+  camLook(T, sc.cam, step >= 1 && step <= 2, null);
+  NODES.forEach((n, i) => {
+    const active = (key === 'ghat' ? i === 1 : i === sc.cam) && step >= 1 && step <= 3;
+    n.led.material.color.set(i === 2 ? (Math.sin(T * 6) > 0 ? 0xff3b30 : 0x441111) : active ? (Math.sin(T * 10) > 0 ? 0x7dffb0 : 0x1fae55) : 0x3fd17a);
+    n.led.scale.setScalar(active ? 1.6 : 1);
+  });
+  xMark.visible = key === 'offline'; xMark.lookAt(camera.position);
+  if (key === 'offline') { F.hb3.target = 0; }
+}
+
+
+/* ---------- cloud + AI core ---------- */
+const cloud = new THREE.Group(); cloud.position.copy(CLOUD); cloud.rotation.y = CROT; scene.add(cloud);
+const cloudMat = new THREE.MeshStandardMaterial({ color:0xffffff, roughness:1, transparent:true, opacity:0.93 });
+[[0,0,0,2.5],[-2.5,-0.4,0.3,1.9],[2.6,-0.3,-0.2,2],[-1.2,1.1,-0.5,1.8],[1.3,1.2,0.3,1.6],[4.2,-0.6,0.3,1.3],[-4.2,-0.7,0,1.3]].forEach(([x,y,z,r]) => {
+  const m = new THREE.Mesh(sphere, cloudMat); m.position.set(x,y,z+1.2); m.scale.setScalar(r); cloud.add(m); });
+const coreMat = new THREE.MeshBasicMaterial({ color:0x6a55e6 });
+const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 1), new THREE.MeshBasicMaterial({ color:0x6a55e6, wireframe:true })); core.position.set(0, 0.2, 4); cloud.add(core);
+const coreIn = new THREE.Mesh(new THREE.IcosahedronGeometry(0.62, 0), coreMat); coreIn.position.copy(core.position); cloud.add(coreIn);
+const rings = [0,1,2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.04, 6, 48), new THREE.MeshBasicMaterial({ color:0x6a55e6, transparent:true, opacity:0 })); r.position.copy(core.position); cloud.add(r); return r; });
+const CORE = CLOUD.clone().add(V(4 * Math.sin(CROT), 0.2, 4 * Math.cos(CROT)));
+
+/* ---------- gateway marker + phone ---------- */
+const phone = new THREE.Group(); phone.position.copy(PHONE); scene.add(phone);
+mesh(new THREE.BoxGeometry(2.7, 5.2, 0.24), std(0x1b1f24, { roughness:0.3, metalness:0.3 }), 0, 0, 0, phone);
+const phoneCv = document.createElement('canvas'); phoneCv.width = 360; phoneCv.height = 720;
+const phoneTex = new THREE.CanvasTexture(phoneCv);
+const pscreen = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 5), new THREE.MeshBasicMaterial({ map:phoneTex })); pscreen.position.z = 0.13; phone.add(pscreen);
+phone.traverse(o => { o.castShadow = false; });
+
+/* ---------- labels, flows (built by the scene) ---------- */
+function addLabel(pos, html, color) {
+  const el = document.createElement('div'); el.className = 'lbl'; el.style.setProperty('--c', color); el.innerHTML = html; overlay.appendChild(el);
+  const L = { el, pos, on:false, base:html }; labels.push(L); return L;
+}
+const lab = (pos, name, what, c = 'var(--accent)') => addLabel(pos, `<i></i><b>${name}</b>${what ? `<span>${what}</span>` : ''}`, c);
+const F = {}, LB = {};
+LB.cloud = lab(CLOUD.clone().add(V(1.4, 3.1, 1.8)), 'Cloud', AI_WHAT, 'var(--ai)');
+LB.phone = lab(PHONE.clone().add(V(0, 3.3, 0)), PHONE_THEME.who, 'Alerts + questions', 'var(--msg)');
+setup();
+let showParts = false;
+/* ---------- phone ---------- */
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x+r, y); g.arcTo(x+w, y, x+w, y+h, r); g.arcTo(x+w, y+h, x, y+h, r); g.arcTo(x, y+h, x, y, r); g.arcTo(x, y, x+w, y, r); g.closePath(); }
+function wrapText(g, text, x, y, maxW, lh) { let line = ''; for (const w of text.split(' ')) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { g.fillText(line, x, y); line = w; y += lh; } else line = t; } g.fillText(line, x, y); return y; }
+function drawPhone(sc, done) {
+  const g = phoneCv.getContext('2d'), W = 360, m = sc.metric, P = PHONE_THEME, DF = FONT_NAME;
+  g.fillStyle = '#f3f5f6'; g.fillRect(0, 0, W, 720);
+  g.fillStyle = P.head; g.fillRect(0, 0, W, 150);
+  g.fillStyle = P.light; g.font = '700 20px Atkinson Hyperlegible, sans-serif'; g.fillText(sc.time, 24, 40);
+  g.fillStyle = '#ffffff'; g.font = `800 30px ${DF}, sans-serif`; g.fillText(P.title, 24, 100);
+  g.fillStyle = P.light; g.font = '400 19px Atkinson Hyperlegible, sans-serif'; g.fillText(P.sub, 24, 130);
+  rr(g, 18, 172, W - 36, 262, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; rr(g, 38, 194, done ? 170 : 130, 34, 17); g.fill();
+  g.fillStyle = '#ffffff'; g.font = '700 18px Atkinson Hyperlegible, sans-serif'; g.fillText(done ? sc.status[2] : 'Watching', 54, 217);
+  g.fillStyle = '#16202a'; g.font = `800 27px ${DF}, sans-serif`; wrapText(g, done ? sc.phone.title : P.idleTitle, 38, 272, W - 76, 32);
+  g.fillStyle = '#56656e'; g.font = '400 20px Atkinson Hyperlegible, sans-serif'; wrapText(g, done ? sc.phone.body : P.idleBody, 38, 314, W - 76, 27);
+  rr(g, 18, 452, W - 36, 126, 22); g.fillStyle = '#ffffff'; g.fill();
+  g.fillStyle = '#56656e'; g.font = '400 18px Atkinson Hyperlegible, sans-serif'; g.fillText(m.label, 38, 486);
+  g.fillStyle = done ? '#1d8a4b' : '#d9861a'; g.font = `800 44px ${DF}, sans-serif`; g.fillText(fmt(m, done ? m.to : m.from), 38, 546);
+  rr(g, 18, 606, W - 36, 70, 35); g.fillStyle = P.head; g.fill();
+  g.fillStyle = '#ffffff'; g.font = '400 21px Atkinson Hyperlegible, sans-serif'; g.fillText(`Ask: "${P.ask}"`, 40, 649);
+  phoneTex.needsUpdate = true;
+}
+
+/* ---------- theme ---------- */
+function applyTheme() {
+  const sky = new THREE.Color(css('--sky') || '#e3edf1');
+  scene.background = sky; scene.fog = new THREE.Fog(sky, 120, 240);
+  groundMat.color.set(css('--ground') || '#8fa27a');
+  const dark = sky.getHSL({}).l < 0.3;
+  hemi.intensity = dark ? 0.55 : 0.75; sun.intensity = dark ? 0.7 : 0.95;
+  const map = { read:css('--read'), cmd:css('--cmd'), msg:css('--msg'), ai:css('--ai'), p1:css('--p1'), p2:css('--p2'), p3:css('--p3'), dim:'#7c8ca3' };
+  flows.forEach(f => f.color(map[f.kind]));
+  const ai = css('--ai'); coreMat.color.set(ai); core.material.color.set(ai); rings.forEach(r => r.material.color.set(ai));
+  if (typeof onTheme === 'function') onTheme(dark);
+}
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+
+/* ---------- state ---------- */
+const thinkEl = $('#think');
+const state = { step:0, t:0, scen:ORDER[0], playing:!reduce, a:0 };
+const clock = new THREE.Clock();
+function applyStep() {
+  const sc = SCEN[state.scen], i = state.step;
+  for (const k in F) F[k].target = (sc.flows[i] || []).includes(k) ? 1 : (AMBIENT[k] || 0);
+  updateLabelVis();
+  drawPhone(sc, i === 4);
+  thinkEl.innerHTML = `<div class="h">${THINK_HEAD}</div><div style="margin-top:4px">${sc.think}</div><ul>${sc.options.map(o => `<li class="${o[2] ? 'y' : 'n'}"><span class="m">${o[2] ? '✓' : '×'}</span><span>${o[0]}</span><span class="s">${o[1]}</span></li>`).join('')}</ul>`;
+  thinkEl.classList.toggle('on', i === sc.tStep);
+  $('#capT').textContent = STEPS[i].t; $('#capD').textContent = STEPS[i].d;
+  $('#capX').innerHTML = `<b>${sc.name}:</b> ` + sc.ex[i];
+  document.querySelectorAll('.step').forEach((b, k) => { b.setAttribute('aria-current', k === i ? 'step' : 'false'); if (k !== i) b.style.setProperty('--p', k < i ? 1 : 0); });
+  $('#hudScen').textContent = `${sc.name} · ${sc.time}`; $('#hudLbl').textContent = sc.metric.label; $('#hudNote').textContent = sc.note;
+}
+function updateLabelVis() {
+  const sc = SCEN[state.scen], i = state.step, show = sc.labels[i] || [];
+  for (const k in LB) LB[k].on = show.includes(k) || (showParts && PARTS.includes(k));
+}
+function setStep(i) { state.step = i; state.t = 0; applyStep(); }
+function setScen(k) { state.scen = k; state.a = 0; document.querySelectorAll('.scen button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k)); setStep(0); }
+function next() { if (state.step < 4) setStep(state.step + 1); else setScen(ORDER[(ORDER.indexOf(state.scen) + 1) % ORDER.length]); }
+
+const scenBox = $('#scen');
+ORDER.forEach(k => { const sc = SCEN[k], b = document.createElement('button'); b.dataset.k = k;
+  b.innerHTML = `<span class="d"></span><b>${sc.name}</b><span class="sv">${sc.gain}</span><small>${sc.blurb}</small>`; b.onclick = () => setScen(k); scenBox.appendChild(b); });
+document.querySelectorAll('.step').forEach(b => b.onclick = () => setStep(+b.dataset.i));
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+const playBtn = $('#play');
+const syncPlay = () => { playBtn.innerHTML = state.playing ? ICON_PAUSE : ICON_PLAY; playBtn.setAttribute('aria-label', state.playing ? 'Pause' : 'Play'); };
+playBtn.onclick = () => { state.playing = !state.playing; syncPlay(); }; syncPlay();
+$('#repeat').onclick = () => setStep(state.step);
+$('#next').onclick = next;
+const partsBtn = $('#partsBtn');
+partsBtn.onclick = () => { showParts = !showParts; partsBtn.setAttribute('aria-pressed', showParts); updateLabelVis(); };
+
+controls.target.copy(CAM.target);
+let placed = false;
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (!placed) { camera.position.copy(controls.target).add(CAM.dir.clone().setLength(w < 600 ? CAM.dist[1] : CAM.dist[0])); placed = true; }
+  camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+
+/* ---------- loop ---------- */
+const ease = (x) => x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2;
+const tmp = new THREE.Vector3();
+const stepBtns = document.querySelectorAll('.step');
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05), T = clock.elapsedTime, sc = SCEN[state.scen];
+  state.t = Math.min(state.t + dt, DUR);
+  if (state.playing && state.t >= DUR) next();
+  const p = state.t / DUR;
+  stepBtns[state.step].style.setProperty('--p', state.playing ? p : 1);
+  const m = sc.metric;
+  const ms = sc.mStep;
+  const k = state.step < ms ? 0 : state.step === ms ? ease(Math.min(1, p * 1.3)) : 1;
+  $('#hudVal').textContent = fmt(m, m.from + (m.to - m.from) * k);
+  const si = state.step < ms ? 0 : state.step === ms && p < 0.75 ? 1 : 2;
+  const chip = $('#hudChip'); chip.textContent = sc.status[si]; chip.style.setProperty('--sev', si === 2 ? 'var(--ok)' : 'var(--warn)');
+  state.a += ((state.step >= ms ? 1 : 0) - state.a) * Math.min(1, dt * 1.2);
+  const A = (id) => state.scen === id ? state.a : 0;
+
+  effects(dt, T, sc, A, state.step, state.scen);
+  movers.forEach(mv => mv.update(dt));
+  const thinking = state.step === sc.tStep || state.step === sc.cloudStep, spin = reduce ? 0 : 1;
+  core.rotation.y += dt * (thinking ? 2.2 : 0.4) * spin; core.rotation.x += dt * (thinking ? 1.1 : 0.2) * spin;
+  coreIn.scale.setScalar(1 + (thinking ? 0.18 * Math.sin(T * 8) : 0));
+  rings.forEach((r, j) => { const q = (T * 0.7 + j / 3) % 1; r.scale.setScalar(1 + q * 2.2); r.material.opacity = thinking ? (1 - q) * 0.8 : 0; r.lookAt(camera.position); });
+  phone.position.y = PHONE.y + (reduce ? 0 : Math.sin(T * 1.4) * 0.18);
+  phone.lookAt(tmp.copy(camera.position).setY(phone.position.y + 1));
+  phone.scale.setScalar(state.step === 4 ? 1.08 : 1);
+
+  flows.forEach(f => f.update(dt));
+  controls.update();
+  renderer.render(scene, camera);
+
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const L of labels) {
+    tmp.copy(L.pos).project(camera);
+    const vis = L.on && tmp.z < 1 && Math.abs(tmp.x) < 1.1 && Math.abs(tmp.y) < 1.1;
+    L.el.classList.toggle('on', vis);
+    if (!vis) continue;
+    const hw = L.el.offsetWidth / 2 + 6, px = Math.max(hw, Math.min(w - hw, (tmp.x + 1) / 2 * w));
+    L.el.style.transform = `translate(${px.toFixed(1)}px, ${((1 - tmp.y) / 2 * h).toFixed(1)}px) translate(-50%, calc(-100% - 8px))`;
+  }
+  requestAnimationFrame(frame);
+}
+setScen(ORDER[0]);
+frame();
+})();
+
+</script>
+
+</body></html>

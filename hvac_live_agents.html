@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HVAC Plant — Live Multi-Agent View (2D)</title>
+<style>
+  :root{--bg:#0e1620;--stage:#0b131c;--panel:#111c27;--card:#16232f;--line:#26384a;
+    --txt:#d6e2ee;--muted:#8097ab;--accent:#4da3ff;--cw:#ef8a4c;--chw:#49a9ea;--air:#32c3b2;
+    --alert:#ff5d5d;--ok:#48c98a;--warn:#f3b64b;--sup:#9f8cf0;--op:#36c2b0;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;font-size:14px}
+  .wrap{max-width:1400px;margin:0 auto;padding:14px}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+  header h1{font-size:18px;font-weight:600;margin:0}
+  header .sub{color:var(--muted);font-size:12px}
+  .kpis{display:flex;gap:9px;margin-left:auto;flex-wrap:wrap}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:6px 11px;min-width:84px}
+  .kpi b{display:block;font-size:16px}.kpi span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .controls{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:4px 0 12px}
+  .controls .lbl{color:var(--muted);font-size:12px}
+  button{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:7px 12px;font-size:12.5px;cursor:pointer;transition:.15s}
+  button:hover{border-color:var(--accent);color:#fff}
+  button.fault{border-color:#5a3a3a}button.fault:hover{border-color:var(--alert);color:#ffd4d4}
+  button.reset{border-color:#2f5540}
+  .main{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
+  .stagebox{flex:1 1 660px;min-width:340px;background:var(--stage);border:1px solid var(--line);border-radius:14px;padding:6px}
+  svg{width:100%;height:auto;display:block}
+  .panel{flex:1 1 340px;min-width:300px;max-width:440px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column}
+  .panel .ph{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+  .ava{width:40px;height:40px;border-radius:50%;background:#14314d;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .panel h2{font-size:15px;margin:0}.panel .role{font-size:11.5px;color:var(--muted)}
+  .chip{display:inline-block;font-size:10.5px;padding:2px 9px;border-radius:20px;margin-top:3px;font-weight:600}
+  .chip.ok{background:rgba(72,201,138,.15);color:var(--ok)}.chip.warn{background:rgba(243,182,75,.16);color:var(--warn)}
+  .chip.alert{background:rgba(255,93,93,.16);color:var(--alert)}
+  .issue{background:var(--card);border-left:3px solid var(--warn);border-radius:8px;padding:9px 11px;margin:12px 0 8px;font-size:13px}
+  .seclab{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 6px}
+  ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+  ol.steps li{position:relative;padding:8px 10px 8px 34px;margin-bottom:7px;background:var(--card);border:1px solid var(--line);border-radius:8px;font-size:12.6px;line-height:1.45;opacity:0;transform:translateY(6px);transition:.35s}
+  ol.steps li.show{opacity:1;transform:none}
+  ol.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:8px;top:8px;width:19px;height:19px;border-radius:50%;background:#1d3a57;color:#9fd0ff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .act{border-radius:9px;padding:10px 12px;font-size:12.6px;margin-top:4px;opacity:0;transition:.35s}
+  .act.show{opacity:1}
+  .act.auto{background:rgba(72,201,138,.09);border:1px solid #27583f}
+  .act.appr{background:rgba(243,182,75,.09);border:1px solid #5e4c24}
+  .act .tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;margin-right:6px}
+  .tag.auto{background:rgba(72,201,138,.2);color:var(--ok)}.tag.appr{background:rgba(243,182,75,.2);color:var(--warn)}
+  .coord{margin-top:10px}
+  .msg{display:flex;gap:8px;align-items:flex-start;font-size:12.3px;padding:7px 10px;border-radius:8px;margin-bottom:6px;background:var(--card);border:1px solid var(--line);opacity:0;transform:translateY(5px);transition:.35s}
+  .msg.show{opacity:1;transform:none}
+  .msg .who{font-weight:700;white-space:nowrap}
+  .msg .who.ag{color:var(--accent)}.msg .who.sup{color:var(--sup)}.msg .who.op{color:var(--op)}
+  .decide{display:flex;gap:8px;margin:4px 0 2px;opacity:0;transition:.35s}
+  .decide.show{opacity:1}
+  .decide button{flex:1}
+  .decide .ok{border-color:#2f5540}.decide .ok:hover{border-color:var(--ok);color:#d6ffe9}
+  .decide .no{border-color:#5a3a3a}.decide .no:hover{border-color:var(--alert);color:#ffd4d4}
+  .outcome{font-size:12.6px;padding:9px 11px;border-radius:8px;margin-top:4px;font-weight:500}
+  .outcome.ok{background:rgba(72,201,138,.12);color:#9ff0c6;border:1px solid #27583f}
+  .outcome.no{background:rgba(255,93,93,.12);color:#ffc4c4;border:1px solid #5a3a3a}
+  .predict{margin-top:10px;font-size:12.4px;color:#bcd0e2}.predict b{color:var(--accent)}
+  .hint{color:var(--muted);font-size:12px;margin-top:12px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px;padding-left:4px}
+  .legend i{display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  text{font-family:'Segoe UI',system-ui,Arial,sans-serif}
+  .flow{stroke-dasharray:9 11;animation:flow 1.1s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-20}}
+  .node{cursor:pointer}
+  .node rect.body,.node .twr,.node circle.body{transition:.2s}
+  .node:hover rect.body,.node:hover .twr,.node:hover circle.body{stroke:#fff}
+  .node.alert rect.body,.node.alert .twr,.node.alert circle.body{stroke:var(--alert);stroke-width:2.6}
+  .avatar{cursor:pointer}.avatar circle.badge{transition:.2s}
+  .avatar:hover circle.badge{fill:#1c4a70}
+  .avatar.sel circle.badge{stroke:#fff;stroke-width:2.6}
+  .avatar.active circle.badge{stroke:var(--alert)}
+  .avatar.active .ring{animation:spin 3s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .comm{stroke-dasharray:7 7;animation:flow .8s linear infinite;opacity:.95}
+  .pulsedot{animation:pz 1s ease-in-out infinite}@keyframes pz{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1>HVAC Plant — Live Multi-Agent View</h1>
+      <div class="sub">Click an agent for its reasoning · simulate an issue to watch the agent activate &amp; coordinate with the supervisor</div></div>
+    <div class="kpis">
+      <div class="kpi"><b id="k-kwt">0.62</b><span>kW / ton</span></div>
+      <div class="kpi"><b id="k-dt">5.8°C</b><span>CHW ΔT</span></div>
+      <div class="kpi"><b id="k-ap">1.3°C</b><span>Tower approach</span></div>
+      <div class="kpi"><b id="k-al">0</b><span>Active alerts</span></div>
+    </div>
+  </header>
+  <div class="controls">
+    <span class="lbl">Simulate issue:</span>
+    <button class="fault" onclick="inject('chiller')">Chiller fouling</button>
+    <button class="fault" onclick="inject('chwpump')">Low ΔT</button>
+    <button class="fault" onclick="inject('tower')">Tower fouling</button>
+    <button class="fault" onclick="inject('ahu')">Dirty filter</button>
+    <button class="fault" onclick="inject('zone')">Zone overheating ⟶ gated</button>
+    <button class="fault" onclick="inject('cwpump')">Pump bearing ⟶ gated</button>
+    <button class="reset" onclick="reset()">↺ Normal operation</button>
+  </div>
+
+  <div class="main">
+    <div class="stagebox">
+      <svg viewBox="0 0 1060 560" role="img" aria-label="HVAC plant schematic with supervisor coordination">
+        <defs>
+          <marker id="aCW" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ef8a4c"/></marker>
+          <marker id="aCHW" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#49a9ea"/></marker>
+          <marker id="aAIR" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#32c3b2"/></marker>
+          <marker id="aSUP" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#9f8cf0"/></marker>
+        </defs>
+
+        <!-- Supervisor + Operator -->
+        <g class="node" id="n-sup" onclick="sel('sup')">
+          <rect class="body" x="398" y="16" width="200" height="58" rx="10" fill="#1a1836" stroke="#6a5bcf" stroke-width="1.6"/>
+          <circle cx="430" cy="45" r="13" fill="#2a2555" stroke="#9f8cf0"/><circle cx="430" cy="41" r="3.6" fill="#c9bdf7"/><path d="M424 52 a6 6 0 0 1 12 0" fill="#c9bdf7"/>
+          <text x="520" y="40" text-anchor="middle" font-size="13" fill="#cdc4f7" font-weight="600">Supervisor Agent</text>
+          <text x="520" y="57" text-anchor="middle" font-size="10" fill="#9a8fd0">orchestrates · gates actions</text>
+        </g>
+        <g class="node" id="n-op" onclick="sel('op')">
+          <rect class="body" x="820" y="16" width="190" height="58" rx="10" fill="#122a2a" stroke="#2f8f84" stroke-width="1.6"/>
+          <circle cx="850" cy="45" r="13" fill="#153434" stroke="#36c2b0"/><circle cx="850" cy="41" r="3.6" fill="#9ff0e6"/><path d="M844 52 a6 6 0 0 1 12 0" fill="#9ff0e6"/>
+          <text x="935" y="40" text-anchor="middle" font-size="13" fill="#bfeee7" font-weight="600">Operator (HITL)</text>
+          <text x="935" y="57" text-anchor="middle" font-size="10" fill="#6fcabf">approves gated actions</text>
+        </g>
+
+        <!-- PIPES -->
+        <path d="M360 300 L360 210 L190 210 L190 235" fill="none" stroke="#223040" stroke-width="7"/>
+        <path d="M360 300 L360 210 L190 210 L190 235" fill="none" stroke="var(--cw)" stroke-width="3.2" class="flow" marker-end="url(#aCW)"/>
+        <path d="M120 350 L120 460 L225 460" fill="none" stroke="#223040" stroke-width="7"/>
+        <path d="M120 350 L120 460 L225 460" fill="none" stroke="var(--cw)" stroke-width="3.2" class="flow" marker-end="url(#aCW)"/>
+        <path d="M285 460 L360 460 L360 440" fill="none" stroke="#223040" stroke-width="7"/>
+        <path d="M285 460 L360 460 L360 440" fill="none" stroke="var(--cw)" stroke-width="3.2" class="flow" marker-end="url(#aCW)"/>
+        <path d="M470 440 L470 490 L540 490" fill="none" stroke="#223040" stroke-width="7"/>
+        <path d="M470 440 L470 490 L540 490" fill="none" stroke="var(--chw)" stroke-width="3.2" class="flow" marker-end="url(#aCHW)"/>
+        <path d="M600 490 L680 490 L680 440" fill="none" stroke="#223040" stroke-width="7"/>
+        <path d="M600 490 L680 490 L680 440" fill="none" stroke="var(--chw)" stroke-width="3.2" class="flow" marker-end="url(#aCHW)"/>
+        <path d="M760 300 L760 240 L470 240 L470 300" fill="none" stroke="#223040" stroke-width="7"/>
+        <path d="M760 300 L760 240 L470 240 L470 300" fill="none" stroke="var(--chw)" stroke-width="3.2" class="flow" opacity=".8" marker-end="url(#aCHW)"/>
+        <path d="M800 335 L900 335" fill="none" stroke="#223040" stroke-width="7"/>
+        <path d="M800 335 L900 335" fill="none" stroke="var(--air)" stroke-width="3.2" class="flow" marker-end="url(#aAIR)"/>
+        <path d="M900 385 L800 385" fill="none" stroke="#223040" stroke-width="7"/>
+        <path d="M900 385 L800 385" fill="none" stroke="var(--air)" stroke-width="3.2" class="flow" opacity=".75" marker-end="url(#aAIR)"/>
+
+        <!-- COMPONENTS -->
+        <g class="node" id="n-tower" onclick="sel('tower')">
+          <path class="twr" d="M70 235 L210 235 L190 350 L90 350 Z" fill="#15222e" stroke="#3a5165" stroke-width="1.6"/>
+          <line x1="95" y1="258" x2="185" y2="258" stroke="#2c4255" stroke-width="2"/><line x1="99" y1="282" x2="181" y2="282" stroke="#2c4255" stroke-width="2"/><line x1="103" y1="306" x2="177" y2="306" stroke="#2c4255" stroke-width="2"/>
+          <circle cx="140" cy="224" r="13" fill="#15222e" stroke="#3a5165"/>
+          <text x="140" y="370" text-anchor="middle" font-size="13" fill="#cdd9e5" font-weight="600">Cooling Tower</text>
+        </g>
+        <g class="node" id="n-chiller" onclick="sel('chiller')">
+          <rect class="body" x="330" y="300" width="180" height="140" rx="9" fill="#15222e" stroke="#3a5165" stroke-width="1.6"/>
+          <rect x="345" y="316" width="150" height="38" rx="5" fill="#1b2d3d"/><text x="420" y="340" text-anchor="middle" font-size="10.5" fill="#f0b48a">Condenser</text>
+          <rect x="345" y="388" width="150" height="38" rx="5" fill="#1b2d3d"/><text x="420" y="412" text-anchor="middle" font-size="10.5" fill="#8fcdf2">Evaporator</text>
+          <text x="420" y="377" text-anchor="middle" font-size="14" fill="#cdd9e5" font-weight="600">Chiller</text>
+        </g>
+        <g class="node" id="n-cwpump" onclick="sel('cwpump')">
+          <circle class="body" cx="255" cy="460" r="25" fill="#15222e" stroke="#3a5165" stroke-width="1.6"/>
+          <path d="M255 460 L255 443 M255 460 L269 468 M255 460 L241 468" stroke="#6f8aa0" stroke-width="2.4" fill="none"/>
+          <text x="255" y="505" text-anchor="middle" font-size="12" fill="#cdd9e5" font-weight="600">CW Pump</text>
+        </g>
+        <g class="node" id="n-chwpump" onclick="sel('chwpump')">
+          <circle class="body" cx="570" cy="490" r="25" fill="#15222e" stroke="#3a5165" stroke-width="1.6"/>
+          <path d="M570 490 L570 473 M570 490 L584 498 M570 490 L556 498" stroke="#6f8aa0" stroke-width="2.4" fill="none"/>
+          <text x="570" y="535" text-anchor="middle" font-size="12" fill="#cdd9e5" font-weight="600">CHW Pump</text>
+        </g>
+        <g class="node" id="n-ahu" onclick="sel('ahu')">
+          <rect class="body" x="640" y="300" width="160" height="140" rx="9" fill="#15222e" stroke="#3a5165" stroke-width="1.6"/>
+          <rect x="656" y="348" width="18" height="50" rx="3" fill="#24384a"/><text x="665" y="416" text-anchor="middle" font-size="8.5" fill="#7d93a6">filter</text>
+          <rect x="708" y="348" width="24" height="50" rx="3" fill="#1b3a4a"/><text x="720" y="416" text-anchor="middle" font-size="8.5" fill="#8fcdf2">coil</text>
+          <circle cx="766" cy="372" r="14" fill="#1b2d3d" stroke="#2c4255"/><text x="766" y="416" text-anchor="middle" font-size="8.5" fill="#7d93a6">fan</text>
+          <text x="720" y="326" text-anchor="middle" font-size="13" fill="#cdd9e5" font-weight="600">AHU</text>
+        </g>
+        <g class="node" id="n-zone" onclick="sel('zone')">
+          <rect class="body" x="900" y="300" width="120" height="140" rx="9" fill="#15222e" stroke="#3a5165" stroke-width="1.6"/>
+          <rect x="918" y="348" width="38" height="28" rx="3" fill="#1b2d3d"/><rect x="964" y="348" width="38" height="28" rx="3" fill="#1b2d3d"/>
+          <rect x="918" y="386" width="38" height="28" rx="3" fill="#1b2d3d"/><rect x="964" y="386" width="38" height="28" rx="3" fill="#1b2d3d"/>
+          <text x="960" y="326" text-anchor="middle" font-size="12.5" fill="#cdd9e5" font-weight="600">VAV Zones</text>
+        </g>
+
+        <text x="140" y="406" text-anchor="middle" font-size="9.5" fill="#64788c">+ water treatment</text>
+        <text x="420" y="456" text-anchor="middle" font-size="9.5" fill="#64788c">+ expansion / headers</text>
+
+        <!-- AVATARS -->
+        <g class="avatar" id="a-tower" onclick="sel('tower')" transform="translate(218,222)"><circle class="ring" r="13" fill="none" stroke="#4da3ff" stroke-width="1.2" stroke-dasharray="4 5"/><circle class="badge" r="11" fill="#14314d" stroke="#4da3ff" stroke-width="1.6"/><circle cx="0" cy="-2.6" r="3.2" fill="#9fd0ff"/><path d="M-5.2 5.2 a5.2 5.2 0 0 1 10.4 0" fill="#9fd0ff"/></g>
+        <g class="avatar" id="a-chiller" onclick="sel('chiller')" transform="translate(515,300)"><circle class="ring" r="13" fill="none" stroke="#4da3ff" stroke-width="1.2" stroke-dasharray="4 5"/><circle class="badge" r="11" fill="#14314d" stroke="#4da3ff" stroke-width="1.6"/><circle cx="0" cy="-2.6" r="3.2" fill="#9fd0ff"/><path d="M-5.2 5.2 a5.2 5.2 0 0 1 10.4 0" fill="#9fd0ff"/></g>
+        <g class="avatar" id="a-cwpump" onclick="sel('cwpump')" transform="translate(292,436)"><circle class="ring" r="12" fill="none" stroke="#4da3ff" stroke-width="1.2" stroke-dasharray="4 5"/><circle class="badge" r="10" fill="#14314d" stroke="#4da3ff" stroke-width="1.6"/><circle cx="0" cy="-2.4" r="2.9" fill="#9fd0ff"/><path d="M-4.8 4.8 a4.8 4.8 0 0 1 9.6 0" fill="#9fd0ff"/></g>
+        <g class="avatar" id="a-chwpump" onclick="sel('chwpump')" transform="translate(607,466)"><circle class="ring" r="12" fill="none" stroke="#4da3ff" stroke-width="1.2" stroke-dasharray="4 5"/><circle class="badge" r="10" fill="#14314d" stroke="#4da3ff" stroke-width="1.6"/><circle cx="0" cy="-2.4" r="2.9" fill="#9fd0ff"/><path d="M-4.8 4.8 a4.8 4.8 0 0 1 9.6 0" fill="#9fd0ff"/></g>
+        <g class="avatar" id="a-ahu" onclick="sel('ahu')" transform="translate(792,300)"><circle class="ring" r="13" fill="none" stroke="#4da3ff" stroke-width="1.2" stroke-dasharray="4 5"/><circle class="badge" r="11" fill="#14314d" stroke="#4da3ff" stroke-width="1.6"/><circle cx="0" cy="-2.6" r="3.2" fill="#9fd0ff"/><path d="M-5.2 5.2 a5.2 5.2 0 0 1 10.4 0" fill="#9fd0ff"/></g>
+        <g class="avatar" id="a-zone" onclick="sel('zone')" transform="translate(1012,300)"><circle class="ring" r="13" fill="none" stroke="#4da3ff" stroke-width="1.2" stroke-dasharray="4 5"/><circle class="badge" r="11" fill="#14314d" stroke="#4da3ff" stroke-width="1.6"/><circle cx="0" cy="-2.6" r="3.2" fill="#9fd0ff"/><path d="M-5.2 5.2 a5.2 5.2 0 0 1 10.4 0" fill="#9fd0ff"/></g>
+        <g id="comms"></g>
+      </svg>
+      <div class="legend">
+        <span><i style="background:var(--chw)"></i>Chilled water</span>
+        <span><i style="background:var(--cw)"></i>Condenser water</span>
+        <span><i style="background:var(--air)"></i>Supply / return air</span>
+        <span><i style="background:var(--sup)"></i>Agent ⟶ Supervisor (gated)</span>
+      </div>
+    </div>
+
+    <div class="panel" id="panel">
+      <div class="ph">
+        <div class="ava" id="p-ava"><svg width="22" height="22" viewBox="-11 -11 22 22"><circle cx="0" cy="-3.5" r="4.2" fill="#9fd0ff"/><path d="M-7 7 a7 7 0 0 1 14 0" fill="#9fd0ff"/></svg></div>
+        <div><h2 id="p-name">Select an agent</h2>
+          <div class="role" id="p-role">Click any avatar or component on the diagram</div>
+          <span class="chip ok" id="p-chip">idle</span></div>
+      </div>
+      <div class="issue" id="p-issue" style="display:none"></div>
+      <div class="seclab" id="p-steplab" style="display:none">Reasoning path</div>
+      <ol class="steps" id="p-steps"></ol>
+      <div class="act" id="p-act"></div>
+      <div class="seclab" id="p-coordlab" style="display:none">Supervisor coordination</div>
+      <div class="coord" id="p-coord"></div>
+      <div class="predict" id="p-predict" style="display:none"></div>
+      <div class="hint" id="p-hint">Tip: <b>Zone overheating</b> and <b>Pump bearing</b> are gated — watch the agent escalate to the Supervisor, then to you for approval.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const AGENTS = {
+  tower:{name:'Cooling Tower Agent',role:'Heat rejection · fan & water-side',sev:'ok',
+    issue:'Tower approach creeping up at similar wet-bulb.',
+    steps:['Approach rose 0.9°C → 2.6°C over 2 weeks.','Fan at 92% yet leaving-water temp high → not a fan limit.','Conductivity & makeup drifting → chemistry off.','Pattern ⇒ fill scaling / biofouling.'],
+    gated:false,action:'Trim fan speed, tighten blowdown/dosing; raise a fill-cleaning work order.',
+    predict:'Untreated → ~4°C approach in ~3 weeks, +6% chiller kW/ton.',kpi:{ap:'2.6°C'}},
+  chiller:{name:'Chiller Agent',role:'Per-chiller health & efficiency',sev:'warn',
+    issue:'Condenser approach rising — suspected fouling.',
+    steps:['Condenser approach 1.2°C → 3.8°C over 3 weeks.','CW flow & entering temp normal → not tower/flow.','kW/ton up ~9% at same load.','Approach ↑ + efficiency ↓ with normal CW ⇒ tube fouling (0.86).'],
+    gated:false,action:'Raise CW setpoint 0.5°C to hold capacity; create tube-cleaning order.',
+    predict:'Trend → +15% kW/ton in ~5 weeks if untreated.',kpi:{kwt:'0.71',ap:'3.8°C'}},
+  chwpump:{name:'CHW Pump Agent',role:'Chilled-water pumping & ΔT',sev:'alert',
+    issue:'Low ΔT syndrome — overpumping.',
+    steps:['CHW ΔT 3.4°C vs 6°C design.','Secondary pumps ~95%, flow above load.','Several AHU valves bypassing.','Low ΔT ⇒ wasted pump energy, false "need more chiller".'],
+    gated:false,action:'Reduce secondary pump speed to restore ΔT; flag bypassing valves to AHU agent.',
+    predict:'Avoids a needless 2nd-chiller start ~15% of days.',kpi:{dt:'3.4°C',kwt:'0.69'}},
+  ahu:{name:'AHU Agent',role:'Air handling unit',sev:'warn',
+    issue:'Dirty filter — airflow & static degrading.',
+    steps:['Filter ΔP 180 → 410 Pa; fan ramped to hold static.','Supply airflow down ~12% at higher power.','SAT still met but fan energy rising.','⇒ loaded filter near change-out.'],
+    gated:false,action:'Cap fan energy via static reset; raise a filter-change work order.',
+    predict:'ΔP hits 500 Pa limit in ~9 days → airflow & IAQ risk.',kpi:{}},
+  zone:{name:'Zone / VAV Agent',role:'Zones & terminal units',sev:'alert',
+    issue:'Zone overheating — suspected stuck VAV damper.',
+    steps:['Zone 4 is 3.5°C above setpoint for 40 min.','Damper commanded open but airflow stays low.','Neighbouring zones normal → local fault.','Command-vs-flow mismatch ⇒ stuck actuator.'],
+    gated:true,gateReason:'auto re-stroke failed; a technician dispatch is a physical, non-reversible action.',
+    action:'Dispatch a technician to Zone 4 VAV actuator.',
+    predict:'Comfort complaint likely within the hour.',kpi:{}},
+  cwpump:{name:'CW Pump Agent',role:'Condenser-water pumping',sev:'alert',
+    issue:'Bearing vibration trending to failure.',
+    steps:['1× vibration up 18% month-on-month.','Current & flow steady → not overload.','Energy rising at bearing-defect frequency.','⇒ early bearing wear, weeks to failure.'],
+    gated:true,gateReason:'taking the pump offline affects condenser-water redundancy.',
+    action:'Schedule pump shutdown & bearing replacement at next window.',
+    predict:'Projected failure in ~6–8 weeks on current trend.',kpi:{}},
+  sup:{name:'Supervisor Agent',role:'Orchestration · safety · gating',sev:'ok',
+    issue:null,steps:['Receives each agent’s proposed action.','Auto-approves low-risk, reversible, in-range actions.','Gates risky / non-reversible / redundancy-affecting actions.','Routes gated actions to the operator and logs every decision.'],
+    info:true},
+  op:{name:'Operator (HITL)',role:'Human approval',sev:'ok',
+    issue:null,steps:['Receives gated requests from the Supervisor with full context.','Approves or rejects — executed only on approval.','Every decision is written to the audit log.'],
+    info:true},
+};
+const POS={tower:[218,222],chiller:[515,300],cwpump:[292,436],chwpump:[607,466],ahu:[792,300],zone:[1012,300]};
+const SUP=[520,74], OP=[935,74];
+let timers=[], alertKey=null, pending=null;
+function $(id){return document.getElementById(id);}
+function clearTimers(){timers.forEach(t=>clearTimeout(t));timers=[];}
+function T(ms,fn){timers.push(setTimeout(fn,ms));}
+
+function clearComms(){$('comms').innerHTML='';}
+function drawComm(x1,y1,x2,y2,color){
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d','M'+x1+' '+y1+' L'+x2+' '+y2);
+  p.setAttribute('fill','none');p.setAttribute('stroke',color);p.setAttribute('stroke-width','2.4');
+  p.setAttribute('class','comm');p.setAttribute('marker-end','url(#aSUP)');
+  $('comms').appendChild(p);return p;
+}
+
+function setSel(key){document.querySelectorAll('.avatar').forEach(e=>e.classList.remove('sel'));$('a-'+key)&&$('a-'+key).classList.add('sel');}
+
+function sel(key){
+  clearTimers();
+  const a=AGENTS[key]; if(!a) return;
+  setSel(key);
+  $('p-name').textContent=a.name;$('p-role').textContent=a.role;
+  const chip=$('p-chip');chip.className='chip '+(a.sev||'ok');chip.textContent=a.info?'coordinator':(a.sev==='ok'?'nominal':a.sev==='warn'?'watch':'alert');
+  const iss=$('p-issue');
+  if(a.issue){iss.style.display='block';iss.textContent='⚠ '+a.issue;} else {iss.style.display='none';}
+  $('p-steplab').style.display='block';$('p-steplab').textContent=a.info?'Role':'Reasoning path';
+  const ol=$('p-steps');ol.innerHTML='';
+  a.steps.forEach((s,i)=>{const li=document.createElement('li');li.textContent=s;ol.appendChild(li);T(150+i*440,()=>li.classList.add('show'));});
+  const act=$('p-act');act.className='act';act.innerHTML='';act.style.display='none';
+  $('p-coordlab').style.display='none';$('p-coord').innerHTML='';
+  $('p-predict').style.display='none';
+  if(a.info) return;
+  const after=150+a.steps.length*440;
+  T(after,()=>{
+    act.style.display='block';act.classList.add(a.gated?'appr':'auto','show');
+    act.innerHTML=(a.gated?'<span class="tag appr">NEEDS APPROVAL</span>':'<span class="tag auto">AUTONOMOUS</span>')+'Proposed: '+a.action;
+    const pr=$('p-predict');pr.style.display='block';pr.innerHTML='<b>Prediction →</b> '+a.predict;
+    coordinate(key,a);
+  });
+}
+
+function msg(cls,who,text){const d=document.createElement('div');d.className='msg';
+  d.innerHTML='<span class="who '+cls+'">'+who+'</span><span>'+text+'</span>';$('p-coord').appendChild(d);
+  T(30,()=>d.classList.add('show'));return d;}
+
+function coordinate(key,a){
+  $('p-coordlab').style.display='block';
+  if(POS[key]) drawComm(POS[key][0],POS[key][1],SUP[0],SUP[1],'#9f8cf0'); // agent -> supervisor
+  if(!a.gated){
+    T(250,()=>msg('ag',a.name.replace(' Agent','')+' →','notifies Supervisor: action is in-range &amp; reversible.'));
+    T(900,()=>msg('sup','Supervisor →','policy check passed — <b>auto-approved</b>.'));
+    T(1550,()=>{const o=document.createElement('div');o.className='outcome ok';o.textContent='✓ Executed autonomously · written to audit log. No human needed.';$('p-coord').appendChild(o);clearComms();});
+    return;
+  }
+  // gated path
+  T(250,()=>msg('ag',a.name.replace(' Agent','')+' →','requests approval from Supervisor — '+a.gateReason));
+  T(1050,()=>{msg('sup','Supervisor →','validates RBAC &amp; safe-range; this needs a human. Escalating to Operator.');
+    drawComm(SUP[0],SUP[1],OP[0],OP[1],'#36c2b0');});
+  T(1850,()=>{msg('op','Operator','awaiting decision…');
+    const dec=document.createElement('div');dec.className='decide';dec.id='dec';
+    dec.innerHTML='<button class="ok" onclick="resolve(true)">✓ Approve</button><button class="no" onclick="resolve(false)">✕ Reject</button>';
+    $('p-coord').appendChild(dec);T(30,()=>dec.classList.add('show'));pending=a;});
+}
+
+function resolve(ok){
+  const dec=$('dec'); if(dec) dec.remove();
+  const o=document.createElement('div');
+  if(ok){o.className='outcome ok';o.textContent='✓ Operator approved → Supervisor releases the action → executing · logged.';}
+  else {o.className='outcome no';o.textContent='✕ Operator rejected → action dropped · logged. Agent keeps monitoring.';}
+  $('p-coord').appendChild(o);
+  T(400,clearComms);pending=null;
+}
+
+function inject(key){
+  reset(true);alertKey=key;
+  $('n-'+key)&&$('n-'+key).classList.add('alert');
+  const av=$('a-'+key); if(av) av.classList.add('active');
+  const a=AGENTS[key];
+  if(a.kpi){if(a.kpi.kwt)$('k-kwt').textContent=a.kpi.kwt;if(a.kpi.dt)$('k-dt').textContent=a.kpi.dt;if(a.kpi.ap)$('k-ap').textContent=a.kpi.ap;}
+  $('k-al').textContent='1';$('k-al').style.color='var(--alert)';
+  sel(key);
+}
+
+function reset(keep){
+  clearTimers();clearComms();alertKey=null;pending=null;
+  document.querySelectorAll('.node').forEach(e=>e.classList.remove('alert'));
+  document.querySelectorAll('.avatar').forEach(e=>e.classList.remove('active'));
+  $('k-kwt').textContent='0.62';$('k-dt').textContent='5.8°C';$('k-ap').textContent='1.3°C';
+  $('k-al').textContent='0';$('k-al').style.color='';
+  if(!keep){
+    document.querySelectorAll('.avatar').forEach(e=>e.classList.remove('sel'));
+    $('p-name').textContent='Select an agent';$('p-role').textContent='Click any avatar or component on the diagram';
+    $('p-chip').className='chip ok';$('p-chip').textContent='idle';
+    $('p-issue').style.display='none';$('p-steplab').style.display='none';$('p-steps').innerHTML='';
+    $('p-act').style.display='none';$('p-act').innerHTML='';$('p-coordlab').style.display='none';$('p-coord').innerHTML='';$('p-predict').style.display='none';
+  }
+}
+</script>
+</body>
+</html>

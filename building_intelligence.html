@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Making Any System Intelligent — Autonomous MAS</title>
+<style>
+  :root{--bg0:#05080f;--bg1:#0a1322;--txt:#e7eef7;--muted:#8aa0b8;--line:#1e2c3e;--gold:#ffd27a;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:radial-gradient(1200px 800px at 30% 10%,#0e1a2e 0%,var(--bg1) 40%,var(--bg0) 100%);color:var(--txt);font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;overflow-x:hidden}
+  .wrap{max-width:1180px;margin:0 auto;padding:26px 22px 40px}
+  .hero{text-align:center;margin-bottom:10px}
+  .hero h1{font-size:34px;margin:0 0 4px;font-weight:700;letter-spacing:.2px;
+    background:linear-gradient(90deg,#8ad0ff,#b9a7ff 50%,#7ef0cf);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .tag{display:inline-block;font-size:12.5px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);
+    border:1px solid #3a3320;background:rgba(255,210,122,.07);padding:4px 14px;border-radius:30px}
+  .hero p{color:var(--muted);font-size:14px;margin:10px auto 0;max-width:680px;line-height:1.6}
+  .main{display:flex;gap:26px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .stagebox{flex:1 1 520px;min-width:320px;display:flex;justify-content:center}
+  svg{width:100%;max-width:640px;height:auto;display:block;overflow:visible}
+  .side{flex:1 1 330px;min-width:290px;max-width:430px}
+  .card{background:linear-gradient(160deg,rgba(23,37,58,.9),rgba(12,20,34,.9));border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+  .card .num{font-size:12px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+  .card h2{font-size:22px;margin:4px 0 2px;transition:color .3s}
+  .card .cap{font-size:14px;color:#c7d6e6;line-height:1.5;margin:8px 0 14px}
+  .card .ex{font-size:13px;line-height:1.6;color:#aebfd1;background:rgba(255,255,255,.03);border-left:3px solid #39506b;border-radius:8px;padding:10px 12px}
+  .card .ex b{color:#e7eef7}
+  .dots{display:flex;gap:7px;margin-top:16px;flex-wrap:wrap}
+  .dots button{width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);font-size:12px;cursor:pointer;transition:.18s}
+  .dots button.on{color:#06121f;font-weight:700}
+  .controls{display:flex;gap:8px;margin-top:14px;align-items:center}
+  .controls button{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);border-radius:9px;padding:7px 13px;font-size:12.5px;cursor:pointer}
+  .controls button:hover{border-color:#3a5472}
+  .controls .lbl{color:var(--muted);font-size:12px;margin-left:auto}
+  .loopline{fill:none;stroke-dasharray:3 9;stroke-linecap:round;animation:spin 26s linear infinite;transform-origin:360px 330px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .corepulse{animation:breathe 3.4s ease-in-out infinite;transform-origin:360px 330px}
+  @keyframes breathe{0%,100%{opacity:.5}50%{opacity:1}}
+  .node{cursor:pointer}
+  .node .glow{transition:.35s}
+  text{font-family:'Segoe UI',system-ui,Arial,sans-serif}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <span class="tag">Autonomous Multi-Agent System</span>
+    <h1>Making Any System Intelligent</h1>
+    <p>A self-running loop of cooperating AI agents that watches your systems around the clock — and acts on its own, keeping a human in the loop only when it matters.</p>
+  </div>
+
+  <div class="main">
+    <div class="stagebox">
+      <svg viewBox="0 0 720 660" role="img" aria-label="Autonomous building-intelligence loop: monitor, detect, diagnose, predict, act, verify">
+        <defs>
+          <radialGradient id="core" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#2a6cff" stop-opacity=".9"/><stop offset="100%" stop-color="#2a6cff" stop-opacity="0"/></radialGradient>
+          <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+        </defs>
+        <!-- rotating loop rings -->
+        <circle class="loopline" cx="360" cy="330" r="230" stroke="#3a5a86" stroke-width="2" opacity=".55"/>
+        <circle cx="360" cy="330" r="230" fill="none" stroke="#1b2d44" stroke-width="10" opacity=".35"/>
+        <circle cx="360" cy="330" r="186" fill="none" stroke="#14233a" stroke-width="2" opacity=".5"/>
+        <!-- comet -->
+        <circle id="comet" r="7" fill="#fff"/>
+        <circle id="cometglow" r="15" fill="#7cc6ff" opacity=".6" filter="url(#soft)"/>
+        <!-- center core -->
+        <circle class="corepulse" cx="360" cy="330" r="92" fill="url(#core)"/>
+        <g id="coreg">
+          <circle cx="360" cy="330" r="60" fill="#0d1a2e" stroke="#2f5c91" stroke-width="2"/>
+          <!-- building glyph -->
+          <g id="bld" transform="translate(360,324)" stroke="#7cc6ff" stroke-width="2" fill="none">
+            <circle cx="0" cy="0" r="7" fill="#0d2742"/>
+            <circle cx="-16" cy="-12" r="4"/><circle cx="16" cy="-12" r="4"/><circle cx="0" cy="18" r="4"/>
+            <line x1="-13" y1="-10" x2="-3" y2="-3"/><line x1="13" y1="-10" x2="3" y2="-3"/><line x1="0" y1="14" x2="0" y2="6"/>
+          </g>
+          <text x="360" y="372" text-anchor="middle" font-size="12.5" fill="#9fc2ea" font-weight="600">Autonomous MAS</text>
+        </g>
+        <g id="nodes"></g>
+      </svg>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <div class="num" id="s-num">Stage 1 of 6</div>
+        <h2 id="s-name">Monitor</h2>
+        <div class="cap" id="s-cap"></div>
+        <div class="ex" id="s-ex"></div>
+        <div class="controls">
+          <button id="pp" onclick="toggle()">⏸ Pause</button>
+          <span class="lbl">the loop never stops — that’s what “autonomous” means</span>
+        </div>
+        <div class="dots" id="dots"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CX=360, CY=330, R=230, NR=46;
+const STAGES=[
+ {name:'Monitor', cap:'Continuously monitors operations across your systems.', color:'#38bdf8',
+  ex:'Watches the whole system — <b>thousands of signals, 24/7</b> — streaming into the agents.',
+  icon:'<path d="M-13 0 C-7 -8 7 -8 13 0 C7 8 -7 8 -13 0 Z"/><circle cx="0" cy="0" r="3.4"/>'},
+ {name:'Detect', cap:'Identifies abnormal symptoms and hidden patterns.', color:'#fbbf24',
+  ex:'Spots the drift others miss — an <b>abnormal symptom or hidden pattern</b> emerging slowly over time.',
+  icon:'<path d="M-13 0 H-6 L-3 -8 L2 9 L5 -4 L8 0 H13"/>'},
+ {name:'Diagnose', cap:'Diagnoses probable root causes.', color:'#a78bfa',
+  ex:'Rules out the look-alikes and pins the <b>probable root cause</b>, with a confidence score, grounded in your docs.',
+  icon:'<circle cx="-3" cy="-3" r="8"/><line x1="3" y1="3" x2="11" y2="11"/>'},
+ {name:'Predict', cap:'Predicts potential failures.', color:'#22d3ee',
+  ex:'Forecasts where it’s heading — the <b>likely failure and roughly when</b> — before it happens.',
+  icon:'<path d="M-12 8 L-3 -2 L3 4 L12 -8"/><path d="M12 -8 L12 -2 M12 -8 L6 -8"/>'},
+ {name:'Plan & Act', cap:'Plans and executes corrective actions.', color:'#34d399',
+  ex:'Plans the fix and <b>acts (gated)</b> — writing the change back into your existing system.',
+  icon:'<path d="M2 -12 L-8 2 H0 L-2 12 L10 -4 H2 Z"/>'},
+ {name:'Verify', cap:'Verifies whether the problem is resolved.', color:'#2dd4bf',
+  ex:'After acting, <b>re-checks the signals</b> to confirm it’s resolved — then closes the loop, or escalates.',
+  icon:'<path d="M-11 1 L-3 9 L12 -8"/>'},
+];
+const N=STAGES.length;
+function ang(i){return (-90 + i*360/N)*Math.PI/180;}
+function nodePos(i){return [CX+R*Math.cos(ang(i)), CY+R*Math.sin(ang(i))];}
+
+const SVGNS='http://www.w3.org/2000/svg';
+const g=document.getElementById('nodes');
+STAGES.forEach((s,i)=>{
+  const [x,y]=nodePos(i);
+  const grp=document.createElementNS(SVGNS,'g');grp.setAttribute('class','node');grp.setAttribute('transform',`translate(${x},${y})`);
+  grp.addEventListener('click',()=>{manual(i);});
+  grp.innerHTML=
+    `<circle class="glow" r="${NR+10}" fill="${s.color}" opacity=".08"/>`+
+    `<circle class="ring" r="${NR}" fill="#0c1726" stroke="${s.color}" stroke-width="2.5"/>`+
+    `<g class="ic" stroke="${s.color}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round">${s.icon}</g>`;
+  g.appendChild(grp);
+  // label outward
+  const [lx,ly]=[CX+(R+NR+24)*Math.cos(ang(i)), CY+(R+NR+24)*Math.sin(ang(i))];
+  const t=document.createElementNS(SVGNS,'text');t.setAttribute('x',lx);t.setAttribute('y',ly+4);t.setAttribute('text-anchor','middle');
+  t.setAttribute('font-size','14');t.setAttribute('font-weight','600');t.setAttribute('fill',s.color);t.textContent=s.name;
+  g.appendChild(t);
+  s._grp=grp;
+});
+// dots
+const dots=document.getElementById('dots');
+STAGES.forEach((s,i)=>{const b=document.createElement('button');b.id='d'+i;b.textContent=i+1;b.style.borderColor=s.color;b.onclick=()=>manual(i);dots.appendChild(b);});
+
+let cur=-1, playing=true, t0=performance.now(), lastStep=0, cometA=ang(0);
+function setStage(i){
+  cur=i;const s=STAGES[i];
+  document.getElementById('s-num').textContent='Stage '+(i+1)+' of '+N;
+  const nm=document.getElementById('s-name');nm.textContent=s.name;nm.style.color=s.color;
+  document.getElementById('s-cap').textContent=s.cap;
+  document.getElementById('s-ex').innerHTML=s.ex;
+  STAGES.forEach((st,k)=>{const on=k===i;const ring=st._grp.querySelector('.ring');const glow=st._grp.querySelector('.glow');
+    st._grp.style.filter=on?`drop-shadow(0 0 14px ${st.color})`:'none';
+    ring.setAttribute('fill',on?st.color:'#0c1726');
+    st._grp.querySelector('.ic').setAttribute('stroke',on?'#06121f':st.color);
+    glow.setAttribute('opacity',on?'.22':'.08');
+    st._grp.setAttribute('transform',`translate(${nodePos(k)[0]},${nodePos(k)[1]}) scale(${on?1.16:1})`);
+    const d=document.getElementById('d'+k);d.classList.toggle('on',on);d.style.background=on?st.color:'rgba(255,255,255,.03)';d.style.color=on?'#06121f':st.color;});
+}
+function manual(i){playing=false;document.getElementById('pp').textContent='▶ Play';setStage(i);cometA=ang(i);}
+function toggle(){playing=!playing;document.getElementById('pp').textContent=playing?'⏸ Pause':'▶ Play';lastStep=performance.now();}
+
+const comet=document.getElementById('comet'),cg=document.getElementById('cometglow');
+function frame(now){
+  // comet travels continuously
+  cometA+=0.0016*(playing?1:0.25);
+  const cxp=CX+R*Math.cos(cometA), cyp=CY+R*Math.sin(cometA);
+  comet.setAttribute('cx',cxp);comet.setAttribute('cy',cyp);cg.setAttribute('cx',cxp);cg.setAttribute('cy',cyp);
+  if(playing && now-lastStep>2800){lastStep=now;setStage((cur+1)%N);}
+  requestAnimationFrame(frame);
+}
+setStage(0);lastStep=performance.now();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
